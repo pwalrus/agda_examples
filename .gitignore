@@ -1,0 +1,11 @@
+*MAlonzo*
+*.agdai
+*.tmp.*
+*~
+.*.sw[a-p]
+.*.vim
+.cabal-sandbox/
+.DS_Store
+.*
+\#*\#
+
