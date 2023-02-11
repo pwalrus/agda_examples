@@ -2,7 +2,8 @@
 module d1.floors where
 
 open import Data.Bool.Base using (if_then_else_)
-open import Agda.Builtin.String using (String ; primStringToList)
+open import Agda.Builtin.String using (String ; primStringToList )
+open import Data.String using (_++_)
 open import Agda.Builtin.Int using (Int ; pos ; negsuc)
 open import Data.Integer.Base using (_+_ ; _-_)
 open import Data.Integer.Show using (show)
@@ -19,5 +20,5 @@ count_moves_ch ( x ∷ xs ) =
 
 
 count_moves : String → String
-count_moves x = show (count_moves_ch (primStringToList x))
+count_moves x = show (count_moves_ch (primStringToList x)) ++ "\n"
 

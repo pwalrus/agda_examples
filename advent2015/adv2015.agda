@@ -3,7 +3,7 @@ module adv2015 where
 open import Agda.Builtin.IO
 open import Agda.Builtin.Unit using (⊤)
 open import Agda.Builtin.String
-open import d1.floors
+open import d1.enter
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
