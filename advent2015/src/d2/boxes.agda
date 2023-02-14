@@ -51,7 +51,7 @@ parse_nat : Nat -> List Char → Nat
 parse_nat start [] = start
 parse_nat start (x ∷ xs) = if (is_digit x)
    then (parse_nat (10 * start + (parse_digit x)) xs)
-   else start
+   else (parse_nat start xs)
 
 find_parts : Char → List Char → List (List Char)
 find_parts delim [] = []
