@@ -280,7 +280,7 @@ run_sim x =
       (mk_assm_tree db))
       where
         db : List Inst
-        db = map parse_line (lines x)
+        db = (assignop (litu 956) "b") ∷ (map parse_line (lines x))
 
 --run_sim x with read_val_rec (suc(length (lines x))) (wireu "a") (mk_tree (map parse_line (lines x)))
 --... | (missing wire) = "wire was missing: " ++ wire ++ "\n"
