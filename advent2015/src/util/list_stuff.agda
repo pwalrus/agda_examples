@@ -13,6 +13,7 @@ open import Data.Nat.Show using (readMaybe)
 open import Function.Base using (_on_; _∘′_; _∘_)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
 
+
 -- Almost completed copied from std-lib. Its in the online version, but not the installed version?
 
 
@@ -65,3 +66,7 @@ linesByᵇ p = List.map fromList ∘ ListlinesByᵇ p ∘ toList
 lines : String → List String
 lines = linesByᵇ ('\n' Char.≈ᵇ_)
 
+unmaybe : {A : Set} → List (Maybe A) → List A
+unmaybe [] = []
+unmaybe ((just x) ∷ xs) = x ∷ (unmaybe xs)
+unmaybe (nothing ∷ xs) = unmaybe xs
