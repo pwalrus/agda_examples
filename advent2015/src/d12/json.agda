@@ -7,12 +7,16 @@ open import Data.String.Base using (fromList ; toList ; _++_)
 open import Agda.Builtin.Char using (Char ; primCharToNat ; primNatToChar)
 open import Data.Char.Properties using (_==_)
 open import Agda.Builtin.List using (List ; _∷_ ; [])
-open import Data.List.Base using (length ; concat ; reverse ; map)
+open import Data.List.Base using (length ; concat ; reverse ; map ; foldr)
 open import Agda.Builtin.Bool using (Bool ; true ; false)
 open import Data.Bool.Base using (if_then_else_ ; _∨_ ; _∧_)
 open import Agda.Builtin.Nat using (Nat ; suc)
-open import Data.Nat.Show using (show ; readMaybe)
+open import Data.Nat.Base using (pred)
+open import Data.Nat.Show using (readMaybe)
 open import Data.Nat.Properties using (_≟_)
+open import Agda.Builtin.Int using (Int ; pos ; negsuc)
+open import Data.Integer.Base using (_+_ ; _-_)
+open import Data.Integer.Show using (show)
 open import Agda.Builtin.Maybe using (Maybe ; nothing ; just)
 open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
 open import Agda.Builtin.Equality using (refl ; _≡_)
@@ -22,10 +26,19 @@ open import Function.Base using (_∘_)
 data JsonObj : Set where
   null : JsonObj
   boolean : Bool → JsonObj
-  num : Nat → JsonObj
+  num : Int → JsonObj
   str : String → JsonObj
   lst : List JsonObj → JsonObj
   dict : List (String × JsonObj) → JsonObj
+
+readIntMaybe : List Char → Maybe Int
+readIntMaybe [] = nothing
+readIntMaybe ('-' ∷ xs) with (readMaybe 10 (fromList xs))
+readIntMaybe ('-' ∷ xs) | nothing = nothing
+readIntMaybe ('-' ∷ xs) | (just k) = just (negsuc (pred k))
+readIntMaybe xs with (readMaybe 10 (fromList xs))
+readIntMaybe xs | nothing = nothing
+readIntMaybe xs | (just k) = just (pos k)
 
 is-balanced-h : List Char → Bool → List Char → Bool
 is-balanced-h [] false [] = true
@@ -99,7 +112,7 @@ remove-cl : List Char → List Char
 remove-cl = (rem-fst-c '{') ∘ (rem-lst-c '}')
 
 read-char-h : List Char → Char → List Char → Maybe (List Char × List Char)
-read-char-h x _ [] = if (is-balanced x) then (just(reverse x , [])) else nothing
+read-char-h x _ [] = if (is-balanced (reverse x)) then (just(reverse x , [])) else nothing
 read-char-h x delim (y ∷ ys) with ((y == delim) ∧ (is-balanced (reverse x)))
 read-char-h x delim (y ∷ ys) | true = just (reverse x , ys)
 read-char-h x delim (y ∷ ys) | false = read-char-h (y ∷ x) delim ys
@@ -145,18 +158,42 @@ parse-json-h (suc l) ('{' ∷ xs) with ((break-comma ∘ remove-cl ∘ proj₁ �
 parse-json-h (suc l) ('{' ∷ xs) | (just parts) with (unmaybe (map (parse-colon (parse-json-h l) ) parts))
 parse-json-h (suc l) ('{' ∷ xs) | (just parts) | keys = just (dict keys)
 parse-json-h (suc l) ('{' ∷ xs) | nothing = nothing
-parse-json-h _ (x ∷ xs) with ((readMaybe 10 ∘ fromList ∘ trim) (x ∷ xs))
+parse-json-h _ (x ∷ xs) with ((readIntMaybe ∘ trim) (x ∷ xs))
 parse-json-h _ (x ∷ xs) | nothing = nothing
 parse-json-h _ (x ∷ xs) | (just k) = just (num k)
 
 parse-json : List Char → Maybe JsonObj
 parse-json x = parse-json-h (length x) (trim x)
 
+is-red : (String × JsonObj) → Bool
+is-red (_ , (str "red")) = true
+is-red _ = false
+
+has-red : JsonObj → Bool
+has-red (dict d) = foldr _∨_ false (map is-red d)
+has-red _ = false
+
+add-up-all-h : Nat → JsonObj → Int
+add-up-all-h _ (num k) = k
+add-up-all-h (suc l) (lst d) = foldr _+_ (pos 0) (map (add-up-all-h l) d)
+add-up-all-h (suc l) (dict d) with (has-red (dict d))
+add-up-all-h (suc l) (dict d) | false = foldr _+_ (pos 0) (map ((add-up-all-h l) ∘ proj₂) d)
+add-up-all-h (suc l) (dict d) | true = pos 0
+add-up-all-h _ _ = pos 0
+
+sum-all : String → String
+sum-all x with ((parse-json ∘ toList) x)
+sum-all x | nothing = "\nfailed parse\n"
+sum-all x | (just tree) = "\ncount: " ++ (show (add-up-all-h ((length ∘ toList) x) tree)) ++ "\n"
+
 test-trim : (fromList ∘ trim ∘ toList) "    abc d   " ≡ "abc d"
 test-trim = refl
 
 test-take-string : (fromList ∘ proj₁) (take-string (toList "\"abc\": 1")) ≡ "\"abc\""
 test-take-string = refl
+
+test-take-list : (fromList ∘ proj₁) (take-list (toList "[[[3]]]")) ≡ "[[[3]]]"
+test-take-list = refl
 
 test-parse-false : (parse-json ∘ toList) "false" ≡ just (boolean false)
 test-parse-false = refl
@@ -182,13 +219,16 @@ test-break-comma_a = refl
 test-break-comma_b : ((break-comma ∘ remove-sq ∘ proj₁ ∘ take-list ∘ toList) "[123,456]") ≡ just ((toList "123") ∷ (toList "456") ∷ [])
 test-break-comma_b = refl
 
+test-break-comma_c : read-comma-h [] (toList "[123,456]") ≡ just ((toList "[123,456]") , [])
+test-break-comma_c = refl
+
 test-parse-list : (parse-json ∘ toList) "[\"abc\",\"q\"]" ≡ just (lst ((str "abc") ∷ (str "q") ∷ []))
 test-parse-list = refl
 
 test-parse-dict : (parse-json ∘ toList) "{\"abc\":\"q\"}" ≡ just (dict (("abc", (str "q")) ∷ []))
 test-parse-dict = refl
 
-test-parse-dict-num : (parse-json ∘ toList) "{\"abc\": 5 }" ≡ just (dict (("abc", (num 5)) ∷ []))
+test-parse-dict-num : (parse-json ∘ toList) "{\"abc\": 5 }" ≡ just (dict (("abc", (num (pos 5))) ∷ []))
 test-parse-dict-num = refl
 
 test-is-balanceda : (is-balanced ∘ toList) "\"abc\"" ≡ true
@@ -203,7 +243,20 @@ test-is-balancedc = refl
 test-is-balancedd : (is-balanced ∘ toList) "[\"abc\"}]" ≡ false
 test-is-balancedd = refl
 
+test-add-up-all-a : sum-all "[1,2,3]" ≡ "\ncount: 6\n"
+test-add-up-all-a = refl
 
-sum-all : String → String
-sum-all x = x
+test-add-up-all-aa : sum-all "{\"a\":2,\"b\":4}" ≡ "\ncount: 6\n"
+test-add-up-all-aa = refl
 
+test-add-up-all-b : sum-all "[[[3]]]" ≡ "\ncount: 3\n"
+test-add-up-all-b = refl
+
+test-add-up-all-ba : sum-all "{\"a\":{\"b\":4},\"c\":-1}" ≡ "\ncount: 3\n"
+test-add-up-all-ba = refl
+
+test-add-up-all-c : sum-all "{\"a\":[-1,1]}" ≡ "\ncount: 0\n"
+test-add-up-all-c = refl
+
+test-add-up-all-d : sum-all "[]" ≡ "\ncount: 0\n"
+test-add-up-all-d = refl
