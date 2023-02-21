@@ -14,6 +14,22 @@ open import Function.Base using (_on_; _∘′_; _∘_)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
 
 
+trim-leading : List Char → List Char
+trim-leading [] = []
+trim-leading (' ' ∷ xs) = trim-leading xs
+trim-leading (x ∷ xs) = x ∷ xs
+
+trim-trailing : List Char → List Char
+trim-trailing [] = []
+trim-trailing (x ∷ xs) with (trim-trailing xs)
+trim-trailing (x ∷ xs) | [] = x ∷ []
+trim-trailing (x ∷ xs) | (' ' ∷ []) = x ∷ []
+trim-trailing (x ∷ xs) | (y ∷ ys) = x ∷ y ∷ ys
+
+trim : List Char → List Char
+trim = trim-trailing ∘ trim-leading
+
+
 -- Almost completed copied from std-lib. Its in the online version, but not the installed version?
 
 
@@ -70,3 +86,6 @@ unmaybe : {A : Set} → List (Maybe A) → List A
 unmaybe [] = []
 unmaybe ((just x) ∷ xs) = x ∷ (unmaybe xs)
 unmaybe (nothing ∷ xs) = unmaybe xs
+
+test-trim : (fromList ∘ trim ∘ toList) "    abc d   " ≡ "abc d"
+test-trim = refl
