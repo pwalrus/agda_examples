@@ -2,7 +2,7 @@
 
 module d9.tsm where
 
-open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ)
+open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms)
 open import util.lookup using (LookupTree ; build_tree ; has_val ; set_val ; all_values) renaming (read_val to read_tree)
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (toList ; fromList ; _++_ ; unlines)
@@ -62,25 +62,6 @@ rank_path (suc l) (x ∷ y ∷ xs) db | (just part) | nothing = nothing
 rank_path (suc l) (x ∷ y ∷ xs) db | nothing = nothing
 rank_path _ _ _ = just 0
 
-add_one_inner : {A : Set} → A → (A × List A) → (A × List A)
-add_one_inner x (y , xs) = (y , x ∷ xs)
-
-each_one : {A : Set} →  List A → List (A × List A)
-each_one [] = []
-each_one (x ∷ []) = (x , []) ∷ []
-each_one (x ∷ xs) with (each_one xs)
-each_one (x ∷ xs) | (y , inner) ∷ outer = (x , y ∷ inner) ∷ (map (λ {q → add_one_inner x q}) (each_one xs))
-each_one (y ∷ xs) | [] = []
-
-
-make_perms : {A : Set} → Nat → List A → List (List A)
-make_perms 0 _ = [] ∷ []
-make_perms _ [] = [] ∷ []
-make_perms (suc l) inp with (each_one inp)
-make_perms (suc l) inp | pairs = concat (map
-  (λ {(a , xs) → map (λ {q → a ∷ q}) (make_perms l xs)})
-   pairs)
-
 show_path : List String → List Link → String
 show_path cities db with (rank_path (suc (length cities)) cities db)
 show_path cities db | just score = (foldr _++_ "" cities) ++ " = " ++ (show score)
@@ -113,7 +94,7 @@ shortest x = maybe_show_path mp db
     cities : List String
     cities = unique_cities db
     perms : List (List String)
-    perms = make_perms (suc (length cities)) cities
+    perms = make-perms cities
     mp : Maybe (List String)
     mp = min_path perms db
 
@@ -123,17 +104,9 @@ test_parse_line = refl
 test_rank_a : rank_path 4 ("A" ∷ "B" ∷ "C" ∷ []) ((link "A" "B" 2) ∷ (link "C" "B" 3) ∷ []) ≡ just 5
 test_rank_a = refl
 
-test_each_one : each_one ("A" ∷ "B" ∷ "C" ∷ []) ≡
-  ("A" , "B" ∷ "C" ∷ []) ∷
-  ("B" , "A" ∷ "C" ∷ []) ∷
-  ("C" , "A" ∷ "B" ∷ []) ∷ []
-test_each_one = refl
 
 test_unmaybe : unmaybe (map parse_line (lines  "A to B = 3\nC to B = 2")) ≡ (link "A" "B" 3) ∷ (link "C" "B" 2) ∷ []
 test_unmaybe = refl
 
 test_unique_cities : unique_cities ((link "A" "B" 3) ∷ (link "C" "B" 2) ∷ []) ≡ "C" ∷ "B" ∷ "A" ∷ []
 test_unique_cities = refl
-
-test_make_perms : map (λ {x → foldr _++_ "" x}) (make_perms 3 ("B" ∷ "A" ∷ [])) ≡ "BA" ∷ "AB" ∷ []
-test_make_perms = refl

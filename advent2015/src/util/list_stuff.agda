@@ -2,15 +2,16 @@
 module util.list_stuff where
 
 open import Agda.Builtin.String using (String)
-open import Data.String.Base using (fromList ; toList)
+open import Data.String.Base using (fromList ; toList ; _++_)
 open import Data.Bool.Base using (Bool; true; false; if_then_else_)
 open import Data.Char.Base as Char using (Char)
-open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse)
+open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
-open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉)
+open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc)
 open import Data.Nat.Show using (readMaybe)
 open import Function.Base using (_on_; _∘′_; _∘_)
+open import Data.Product using (_×_ ; _,_)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
 
 
@@ -29,6 +30,26 @@ trim-trailing (x ∷ xs) | (y ∷ ys) = x ∷ y ∷ ys
 trim : List Char → List Char
 trim = trim-trailing ∘ trim-leading
 
+add-one-inner : {A : Set} → A → (A × List A) → (A × List A)
+add-one-inner x (y , xs) = (y , x ∷ xs)
+
+each-one : {A : Set} →  List A → List (A × List A)
+each-one [] = []
+each-one (x ∷ []) = (x , []) ∷ []
+each-one (x ∷ xs) with (each-one xs)
+each-one (x ∷ xs) | (y , inner) ∷ outer = (x , y ∷ inner) ∷ (map (λ {q → add-one-inner x q}) (each-one xs))
+each-one (y ∷ xs) | [] = []
+
+make-perms-h : {A : Set} → ℕ → List A → List (List A)
+make-perms-h 0 _ = [] ∷ []
+make-perms-h _ [] = [] ∷ []
+make-perms-h (suc l) inp with (each-one inp)
+make-perms-h (suc l) inp | pairs = concat (map
+  (λ {(a , xs) → map (λ {q → a ∷ q}) (make-perms-h l xs)})
+   pairs)
+
+make-perms : {A : Set} → List A → List (List A)
+make-perms inp = make-perms-h (suc (length inp)) inp
 
 -- Almost completed copied from std-lib. Its in the online version, but not the installed version?
 
@@ -89,3 +110,12 @@ unmaybe (nothing ∷ xs) = unmaybe xs
 
 test-trim : (fromList ∘ trim ∘ toList) "    abc d   " ≡ "abc d"
 test-trim = refl
+
+test-each-one : each-one ("A" ∷ "B" ∷ "C" ∷ []) ≡
+  ("A" , "B" ∷ "C" ∷ []) ∷
+  ("B" , "A" ∷ "C" ∷ []) ∷
+  ("C" , "A" ∷ "B" ∷ []) ∷ []
+test-each-one = refl
+
+test-make-perms : map (λ {x → foldr _++_ "" x}) (make-perms ("B" ∷ "A" ∷ [])) ≡ "BA" ∷ "AB" ∷ []
+test-make-perms = refl
