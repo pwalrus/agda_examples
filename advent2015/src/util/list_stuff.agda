@@ -5,6 +5,7 @@ open import Agda.Builtin.String using (String)
 open import Data.String.Base using (fromList ; toList ; _++_)
 open import Data.Bool.Base using (Bool; true; false; if_then_else_)
 open import Data.Char.Base as Char using (Char)
+open import Data.Char.Properties using (_==_)
 open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
@@ -26,6 +27,18 @@ trim-trailing (x ∷ xs) with (trim-trailing xs)
 trim-trailing (x ∷ xs) | [] = x ∷ []
 trim-trailing (x ∷ xs) | (' ' ∷ []) = x ∷ []
 trim-trailing (x ∷ xs) | (y ∷ ys) = x ∷ y ∷ ys
+
+rem-dot : Char → List Char → List Char
+rem-dot ch [] = []
+rem-dot ch (x ∷ xs) with (rem-dot ch xs)
+rem-dot ch (x ∷ xs) | [] = x ∷ []
+rem-dot ch (x ∷ xs) | (q ∷ []) with (q == ch)
+rem-dot ch (x ∷ xs) | (q ∷ []) | false = x ∷ q ∷ []
+rem-dot ch (x ∷ xs) | (q ∷ []) | true = x ∷ []
+rem-dot ch (x ∷ xs) | (y ∷ ys) = x ∷ y ∷ ys
+
+rem-dot-s : String → String
+rem-dot-s = fromList ∘ (rem-dot '.') ∘ toList
 
 trim : List Char → List Char
 trim = trim-trailing ∘ trim-leading
