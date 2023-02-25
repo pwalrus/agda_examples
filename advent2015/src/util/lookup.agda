@@ -3,12 +3,15 @@ module util.lookup where
 open import util.list_stuff using (filterᵇ)
 open import Data.Tree.Binary using (Tree ; leaf ; node)
 open import Data.Product using (_×_; _,_)
+open import Agda.Builtin.String using (String)
+open import Data.String.Properties using (_<?_) renaming (_==_ to str-eq)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
 open import Agda.Builtin.Nat using (Nat ; suc ; _<_ ; _==_)
 open import Agda.Builtin.List using (List; _∷_ ; [])
 open import Data.List.Base using (length ; _++_)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_ ; refl)
+open import Relation.Nullary.Decidable using (isYes)
 
 record LTPair (A B : Set) : Set where
   field
@@ -19,6 +22,9 @@ record LTPair (A B : Set) : Set where
 
 LookupTree : Set → Set → Set
 LookupTree A B = Tree (LTPair A B) Bool
+
+LookupStrTree : Set → Set
+LookupStrTree A = Tree (LTPair String A) Bool
 
 mk_pair : {A B : Set} → (A → A → Bool) → (A → A → Bool) → (A × B) → LTPair A B
 mk_pair eq lt (k , v) = record {Eq = eq ; Lt = lt ; key = k; val = v}
@@ -36,6 +42,12 @@ build_tree_help (suc l) eq lt ((x , y) ∷ xs) = node
 
 build_tree : {A B : Set} → (A → A → Bool) → (A → A → Bool) → List (A × B) → LookupTree A B
 build_tree eq lt db = build_tree_help (length db) eq lt db
+
+str-lt : String → String → Bool
+str-lt a b = isYes (a <? b)
+
+build-str-tree : {A : Set} → List (String × A) → LookupStrTree A
+build-str-tree db = build_tree str-eq str-lt db
 
 read_val : {A B : Set} → A → LookupTree A B → Maybe B
 read_val key (leaf _) = nothing
