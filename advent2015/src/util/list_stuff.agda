@@ -12,9 +12,45 @@ open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
 open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc)
 open import Data.Nat.Show using (readMaybe)
 open import Function.Base using (_on_; _∘′_; _∘_)
-open import Data.Product using (_×_ ; _,_)
+open import Data.Product using (_×_ ; _,_ ; proj₁)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
 
+
+starts-with-ch : List Char → List Char → Bool
+starts-with-ch [] _ = true
+starts-with-ch _ [] = false
+starts-with-ch (x ∷ xs) (y ∷ ys) with (x == y)
+starts-with-ch (x ∷ xs) (y ∷ ys) | true = starts-with-ch xs ys
+starts-with-ch (x ∷ xs) (y ∷ ys) | false = false
+
+starts-with : String → String → Bool
+starts-with x y = starts-with-ch (toList x) (toList y)
+
+two-parts-h : ℕ → (List Char × List Char) → (List Char × List Char)
+two-parts-h 0 (lhs , rhs) = lhs , rhs
+two-parts-h _ (lhs , []) = lhs , []
+two-parts-h (suc l) (xs , (y ∷ ys)) = two-parts-h l ((y ∷ xs) , ys)
+
+two-parts : ℕ → String → (String × String)
+two-parts d x with (two-parts-h d ([] , toList x))
+two-parts d x | (lhs , rhs) = fromList (reverse lhs) , fromList rhs
+
+append-front-all : {A : Set} → A → List (List A) → List (List A)
+append-front-all x inp = map (λ {q → x ∷ q}) inp
+
+all-replacements-ch : (List Char × List Char) → List Char → List (List Char)
+all-replacements-ch _ [] = []
+all-replacements-ch (f , t) (x ∷ xs) with (starts-with-ch f (x ∷ xs))
+all-replacements-ch (f , t) (x ∷ xs) | false with (all-replacements-ch (f , t) xs)
+all-replacements-ch (f , t) (x ∷ xs) | false | tail = append-front-all x tail
+all-replacements-ch (f , t) (x ∷ xs) | true with (two-parts-h (length f) ([] , (x ∷ xs)))
+all-replacements-ch (f , t) (x ∷ xs) | true | (_ , rest) with (all-replacements-ch (f , t) xs)
+all-replacements-ch (f , t) (x ∷ xs) | true | (_ , rest) | tail = (concat (t ∷ rest ∷ [])) ∷ (append-front-all x tail)
+
+
+all-replacements : (String × String) → String → List String
+all-replacements (f , t) x with (all-replacements-ch (toList f , toList t) (toList x))
+all-replacements (f , t) x | output = map fromList output
 
 trim-leading : List Char → List Char
 trim-leading [] = []
@@ -132,3 +168,15 @@ test-each-one = refl
 
 test-make-perms : map (λ {x → foldr _++_ "" x}) (make-perms ("B" ∷ "A" ∷ [])) ≡ "BA" ∷ "AB" ∷ []
 test-make-perms = refl
+
+test-starts-with : starts-with "abc" "abcdef" ≡ true
+test-starts-with = refl
+
+test-starts-with-f : starts-with "abc" "acdef" ≡ false
+test-starts-with-f = refl
+
+test-two-parts : two-parts 3 "abcdef" ≡ ("abc" , "def")
+test-two-parts = refl
+
+test-all-replacements : all-replacements ("ab" , "cdf") "ab1ab23ab" ≡ "cdf1ab23ab" ∷ "ab1cdf23ab" ∷ "ab1ab23cdf" ∷ []
+test-all-replacements = refl

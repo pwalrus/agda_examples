@@ -78,6 +78,10 @@ all_values : {A B : Set} → LookupTree A B → List B
 all_values (leaf _) = []
 all_values (node lhs v rhs) = (all_values lhs) ++ ((LTPair.val v) ∷ []) ++ (all_values rhs)
 
+all-keys : {A B : Set} → LookupTree A B → List A
+all-keys (leaf _) = []
+all-keys (node lhs v rhs) = (all-keys lhs) ++ ((LTPair.key v) ∷ []) ++ (all-keys rhs)
+
 test_read_vala : read_val 3 (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 4)
 test_read_vala = refl
 

@@ -1,6 +1,6 @@
 module d19.chem where
 
-open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms ; rem-dot ; append-front-all) renaming (trim to trim-ch)
+open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms ; rem-dot ; append-front-all ; all-replacements) renaming (trim to trim-ch)
 open import util.lookup using (LookupStrTree ; build-str-tree ; has_val ; set_val ; all_values ; all-keys ; LTPair) renaming (read_val to read-tree)
 open import util.json using (readIntMaybe)
 open import Data.Tree.Binary using (leaf ; node)
@@ -47,35 +47,16 @@ last-non-blank-h (x ∷ xs) | nothing with (trim x == "")
 last-non-blank-h (x ∷ xs) | nothing | false = just (trim x) 
 last-non-blank-h (x ∷ xs) | nothing | true = nothing
 
-append-all-front-all : {A : Set} → List A → List (List A) → List (List A)
-append-all-front-all [] inp = inp
-append-all-front-all (x ∷ xs) inp with (append-all-front-all xs inp)
-append-all-front-all (x ∷ xs) inp | tail = append-front-all x tail
-
-apply-rule-ch : Nat → RepRule → List Char → List (List Char)
-apply-rule-ch _ _ [] = [] ∷ []
-apply-rule-ch 0 _ _ = []
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ []) with (toList lhs)
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ []) | (a ∷ []) =
-  if (a ==c x)
-  then ((toList rhs) ∷ [])
-  else ((x ∷ []) ∷ [])
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ []) | _ = (x ∷ []) ∷ []
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ y ∷ xs) with (toList lhs)
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ y ∷ xs) | (a ∷ []) with (apply-rule-ch l (rep lhs rhs) (y ∷ xs))
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ y ∷ xs) | (a ∷ []) | tail =
-  if (a ==c x)
-  then (concat ((append-front-all x tail) ∷ (append-all-front-all {Char} (toList rhs) ((y ∷ xs) ∷ [])) ∷ []))
-  else (append-front-all x tail)
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ y ∷ xs) | (a ∷ b ∷ []) with (apply-rule-ch l (rep lhs rhs) xs)
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ y ∷ xs) | (a ∷ b ∷ []) | tail =
-  if ((a ==c x) ∧ (b ==c y))
-  then (concat ((append-all-front-all (x ∷ y ∷ []) tail) ∷ (append-all-front-all {Char} (toList rhs) (xs ∷ [])) ∷ []))
-  else (append-front-all x (apply-rule-ch l (rep lhs rhs) (y ∷ xs)))
-apply-rule-ch (suc l) (rep lhs rhs) (x ∷ y ∷ xs) | _ = append-front-all x (apply-rule-ch l (rep lhs rhs) (y ∷ xs))
-
 apply-rule : String → RepRule  → List String
-apply-rule x rule = (map fromList) (apply-rule-ch (length (toList x)) rule (toList x))
+apply-rule x (rep f t) = all-replacements (f , t) x
+
+unique-only : List String → List String
+unique-only x = unique-list
+  where
+    tree : LookupStrTree Bool
+    tree = build-str-tree (map (λ {q → (q , true)}) x)
+    unique-list : List String
+    unique-list = all-keys tree
 
 all-replace : String → List String
 all-replace x = unique-list
@@ -90,10 +71,64 @@ all-replace x = unique-list
     last | (just x) = x
     all-applied : List String
     all-applied = concat (map (apply-rule last) rules)
-    tree : LookupStrTree Bool
-    tree = build-str-tree (map (λ {q → (q , true)}) all-applied)
     unique-list : List String
-    unique-list = filterᵇ (λ {q → not (q == last)} ) (all-keys tree)
+    unique-list = filterᵇ (λ {q → not (q == last)} ) (unique-only all-applied)
+
+apply-all-rules : List RepRule → List String → List String
+apply-all-rules _ [] = []
+apply-all-rules rules (x ∷ xs) = unique-only (concat (rec-sol ∷ (apply-all-rules rules xs) ∷ []))
+  where
+    rec-sol : List String
+    rec-sol = concat (map (apply-rule x) rules)
+
+search-rec-breadth : Nat → Nat → String → List RepRule → List String → Maybe (Nat × String)
+search-rec-breadth step 0 _ _ _ = nothing
+search-rec-breadth _ _ _ _ [] = nothing
+search-rec-breadth step (suc l) target db currents with (filterᵇ (λ { q → (q == target)} ) currents)
+search-rec-breadth step (suc l) target db currents | (current ∷ _) = just (step , current)
+search-rec-breadth step (suc l) target db currents | _ with (apply-all-rules db  currents)
+search-rec-breadth step (suc l) target db currents | _ | nexts with (search-rec-breadth (suc step) l target db nexts)
+search-rec-breadth step (suc l) target db currents | _ | nexts | nothing = nothing
+search-rec-breadth step (suc l) target db currents | _ | nexts | (just (sol)) = just sol
+
+search-rec-depth : Nat → Nat → String → List RepRule → List String → Maybe (Nat × String)
+search-rec-depth step 0 _ _ _ = nothing
+search-rec-depth step (suc l) target db currents with (currents)
+search-rec-depth step (suc l) target db currents | [] = nothing
+search-rec-depth step (suc l) target db currents | (current ∷ rest) with (current == target)
+search-rec-depth step (suc l) target db currents | (current ∷ rest) | true = just (step , current)
+search-rec-depth step (suc l) target db currents | (current ∷ rest) | false with ((concat ∘ map (apply-rule current)) db)
+search-rec-depth step (suc l) target db currents | (current ∷ rest) | false | deeper = search-rec-depth (suc step) l target db (concat (deeper ∷ rest ∷ []))
+
+steps-to-e-from : String → String → String
+steps-to-e-from x start = output
+  where
+    rules : List RepRule
+    rules = (unmaybe ∘ (map parse-line) ∘ lines) x
+    rev-rules : List RepRule
+    rev-rules = map (λ {(rep f t) → rep t f}) rules
+    mlast : Maybe String
+    mlast = last-non-blank-h (lines x)
+    last : String
+    last with mlast
+    last | nothing = ""
+    last | (just x) = x
+    msol : Maybe (Nat × String)
+    msol = search-rec-depth 0 1000 "e" rev-rules (start ∷ [])
+    output : String
+    output with msol
+    output | nothing = "not found\n"
+    output | (just sol) = show (proj₁ sol) ++ ", " ++ proj₂ sol ++ "\n"
+
+steps-to-e-from-last : String → String
+steps-to-e-from-last x = steps-to-e-from x last
+  where
+    mlast : Maybe String
+    mlast = last-non-blank-h (lines x)
+    last : String
+    last with mlast
+    last | nothing = ""
+    last | (just x) = x
 
 count-replace : String → String
 count-replace x = "sol: " ++ (show ∘ length ∘ all-replace) x ++ "\n"
@@ -109,3 +144,9 @@ test-all-replace = refl
 
 test-all-replace-b : (unlines ∘ all-replace) "HO => ABC\nOH => DEF\nH => HO\nH => OH\nO => HH\n\nHOH" ≡ "OHOH\nHOOH\nHOHO\nHHHH\nHDEF\nABCH"
 test-all-replace-b = refl
+
+test-steps-from-e-to : steps-to-e-from "H => HO\nH => OH\nO => HH\ne => H\ne => O\n\nHOH" "HOH" ≡ "3, e\n"
+test-steps-from-e-to = refl
+
+test-steps-from-e-to-a : steps-to-e-from "H => HO\nH => OH\nO => HH\ne => H\ne => O\n\nHOH" "HOHOHO" ≡ "6, e\n"
+test-steps-from-e-to-a = refl
