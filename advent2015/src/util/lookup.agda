@@ -26,6 +26,9 @@ LookupTree A B = Tree (LTPair A B) Bool
 LookupStrTree : Set → Set
 LookupStrTree A = Tree (LTPair String A) Bool
 
+LookupNatTree : Set → Set
+LookupNatTree A = Tree (LTPair Nat A) Bool
+
 mk_pair : {A B : Set} → (A → A → Bool) → (A → A → Bool) → (A × B) → LTPair A B
 mk_pair eq lt (k , v) = record {Eq = eq ; Lt = lt ; key = k; val = v}
 
@@ -48,6 +51,9 @@ str-lt a b = isYes (a <? b)
 
 build-str-tree : {A : Set} → List (String × A) → LookupStrTree A
 build-str-tree db = build_tree str-eq str-lt db
+
+build-nat-tree : {A : Set} → List (Nat × A) → LookupNatTree A
+build-nat-tree db = build_tree _==_ _<_ db
 
 read_val : {A B : Set} → A → LookupTree A B → Maybe B
 read_val key (leaf _) = nothing
@@ -77,6 +83,10 @@ set_val key nv (node lhs v rhs) = set_val_op (LTPair.Eq v) (LTPair.Lt v) key nv 
 all_values : {A B : Set} → LookupTree A B → List B
 all_values (leaf _) = []
 all_values (node lhs v rhs) = (all_values lhs) ++ ((LTPair.val v) ∷ []) ++ (all_values rhs)
+
+all-kv : {A B : Set} → LookupTree A B → List (A × B)
+all-kv (leaf _) = []
+all-kv (node lhs v rhs) = (all-kv lhs) ++ ((LTPair.key v , LTPair.val v) ∷ []) ++ (all-kv rhs)
 
 all-keys : {A B : Set} → LookupTree A B → List A
 all-keys (leaf _) = []

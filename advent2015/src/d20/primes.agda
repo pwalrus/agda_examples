@@ -68,6 +68,14 @@ score-number x = foldr _+_ 0 scaled
     scaled : List Nat
     scaled = map (λ {q → 10 * q}) dl
 
+score-number-b : Nat → Nat
+score-number-b x = foldr _+_ 0 scaled
+  where
+    dl : List Nat
+    dl = filterᵇ (λ {q → (div-nat x q) < 50 }) (divisor-list x)
+    scaled : List Nat
+    scaled = map (λ {q → 11 * q}) dl
+
 mk-text : Nat → Nat → String
 mk-text idx score = "House " ++ show idx ++ " got " ++ show score ++ " presents."
 
@@ -85,12 +93,12 @@ iter-score (suc l) target idx | score with (target < suc score)
 iter-score (suc l) target idx | score | true = mk-text idx score ∷ []
 iter-score (suc l) target idx | score | false = (mk-text idx score) ∷ (iter-score l target (suc idx))
 
-iter-score-s : Nat → Nat → Nat → String
-iter-score-s 0 _ _ = "none found"
-iter-score-s (suc l) target idx with (score-number idx)
-iter-score-s (suc l) target idx | score with (target < suc score)
-iter-score-s (suc l) target idx | score | true = mk-text idx score
-iter-score-s (suc l) target idx | score | false = iter-score-s l target (suc idx)
+iter-score-s : Nat → Nat → Nat → (Nat → Nat) → String
+iter-score-s 0 _ _ _ = "none found"
+iter-score-s (suc l) target idx f with (f idx)
+iter-score-s (suc l) target idx f | score with (target < suc score)
+iter-score-s (suc l) target idx f | score | true = mk-text idx score
+iter-score-s (suc l) target idx f | score | false = iter-score-s l target (suc idx) f
 
 min : Nat → Nat → Nat
 min x y = if (x < y) then x else y
@@ -133,7 +141,7 @@ search-min-house x = "\n" ++ sol ++ "\n"
     target | nothing = 1
     target | (just target) = target
     sol : String
-    sol = iter-score-s target target (max 1 (div-nat target 150))
+    sol = iter-score-s target target 1 score-number-b
 
 test-nat-sqrt-a : nat-sqrt 17 ≡ 4
 test-nat-sqrt-a = refl
