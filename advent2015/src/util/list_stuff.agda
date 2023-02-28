@@ -157,6 +157,11 @@ unmaybe [] = []
 unmaybe ((just x) ∷ xs) = x ∷ (unmaybe xs)
 unmaybe (nothing ∷ xs) = unmaybe xs
 
+cartproduct : {A B : Set} → List A → List B → List (A × B)
+cartproduct [] _ = []
+cartproduct _ [] = []
+cartproduct (x ∷ xs) ys = concat ((map (λ {y → (x , y)}) ys) ∷ (cartproduct xs ys) ∷ [])
+
 test-trim : (fromList ∘ trim ∘ toList) "    abc d   " ≡ "abc d"
 test-trim = refl
 
@@ -180,3 +185,7 @@ test-two-parts = refl
 
 test-all-replacements : all-replacements ("ab" , "cdf") "ab1ab23ab" ≡ "cdf1ab23ab" ∷ "ab1cdf23ab" ∷ "ab1ab23cdf" ∷ []
 test-all-replacements = refl
+
+test-cart-product : cartproduct (1 ∷ 2 ∷ []) ("a" ∷ "b" ∷ []) ≡
+  (1 , "a") ∷ (1 , "b") ∷ (2 , "a") ∷ (2 , "b") ∷ []
+test-cart-product = refl
