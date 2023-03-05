@@ -9,12 +9,19 @@ open import Data.Char.Properties using (_==_)
 open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
+open import Agda.Builtin.Nat using (_<_)
 open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc)
 open import Data.Nat.Show using (readMaybe)
 open import Function.Base using (_on_; _∘′_; _∘_)
 open import Data.Product using (_×_ ; _,_ ; proj₁)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
 
+min-by-f : {A : Set} → (A → ℕ) → List A → Maybe A
+min-by-f _ [] = nothing
+min-by-f _ (x ∷ []) = just x
+min-by-f f (x ∷ xs) with (min-by-f f xs)
+min-by-f f (x ∷ xs) | nothing = nothing
+min-by-f f (x ∷ xs) | (just b) = if (f x < f b) then (just x) else (just b)
 
 starts-with-ch : List Char → List Char → Bool
 starts-with-ch [] _ = true
@@ -189,3 +196,6 @@ test-all-replacements = refl
 test-cart-product : cartproduct (1 ∷ 2 ∷ []) ("a" ∷ "b" ∷ []) ≡
   (1 , "a") ∷ (1 , "b") ∷ (2 , "a") ∷ (2 , "b") ∷ []
 test-cart-product = refl
+
+test-min-by-f : min-by-f (λ {q → q}) (2 ∷ 1 ∷ 3 ∷ []) ≡ (just 1)
+test-min-by-f = refl
