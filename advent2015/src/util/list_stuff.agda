@@ -6,7 +6,7 @@ open import Data.String.Base using (fromList ; toList ; _++_)
 open import Data.Bool.Base using (Bool; true; false; if_then_else_)
 open import Data.Char.Base as Char using (Char)
 open import Data.Char.Properties using (_==_)
-open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length)
+open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
 open import Agda.Builtin.Nat using (_<_)
@@ -15,6 +15,13 @@ open import Data.Nat.Show using (readMaybe)
 open import Function.Base using (_on_; _∘′_; _∘_)
 open import Data.Product using (_×_ ; _,_ ; proj₁)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
+
+nat-range : ℕ → List ℕ
+nat-range 0 = []
+nat-range (suc x) = concat ((nat-range x) ∷ (x ∷ []) ∷ [])
+
+enumerate : {A : Set} → List A → List (ℕ × A)
+enumerate x = zip (nat-range (length x)) x
 
 min-by-f : {A : Set} → (A → ℕ) → List A → Maybe A
 min-by-f _ [] = nothing
@@ -199,3 +206,6 @@ test-cart-product = refl
 
 test-min-by-f : min-by-f (λ {q → q}) (2 ∷ 1 ∷ 3 ∷ []) ≡ (just 1)
 test-min-by-f = refl
+
+test-enumerate : enumerate ("A" ∷ "B" ∷ []) ≡ (0 , "A") ∷ (1 , "B") ∷ []
+test-enumerate = refl
