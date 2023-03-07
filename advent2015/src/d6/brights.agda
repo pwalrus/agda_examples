@@ -1,6 +1,6 @@
 module d6.brights where
 
-open import d2.boxes using (find_parts ; parse_nat)
+open import util.list_stuff using (find-parts)
 open import Data.Bool.Base using (if_then_else_ ; _∧_ ; not)
 open import Agda.Builtin.List using (List ; [] ; _∷_)
 open import Data.List using (map ; foldr)
@@ -12,66 +12,66 @@ open import Agda.Builtin.Char using (Char)
 open import Agda.Builtin.String using (String ; primStringToList; primStringFromList)
 open import Data.String using (_++_)
 open import Agda.Builtin.Equality using (refl ; _≡_)
-open import d6.lights using (parse_line ; show_inst ; NatPair ; n_pair ; Inst ; tog ; tof ; ton)
+open import d6.lights using (parse-line ; show-inst ; NatPair ; n-pair ; Inst ; tog ; tof ; ton)
 
-populate_empty_row : Nat → List Nat
-populate_empty_row 0 = []
-populate_empty_row (suc p) = 0 ∷ (populate_empty_row p)
+populate-empty-row : Nat → List Nat
+populate-empty-row 0 = []
+populate-empty-row (suc p) = 0 ∷ (populate-empty-row p)
 
-populate_empty : Nat → Nat → List (List Nat)
-populate_empty 0 width = []
-populate_empty (suc p) width = (populate_empty_row width) ∷ (populate_empty p width)
+populate-empty : Nat → Nat → List (List Nat)
+populate-empty 0 width = []
+populate-empty (suc p) width = (populate-empty-row width) ∷ (populate-empty p width)
 
-show_row : List Nat → String
-show_row inp = foldr _++_ "" (map show inp)
+show-row : List Nat → String
+show-row inp = foldr _++_ "" (map show inp)
 
-show_two_list : List (List Nat) → String
-show_two_list inp = foldr _++_ "" (map (λ {x → (show_row x) ++ ";"}) inp)
+show-two-list : List (List Nat) → String
+show-two-list inp = foldr _++_ "" (map (λ {x → (show-row x) ++ ";"}) inp)
 
-manip_row : (Nat → Nat) → NatPair → NatPair → List Nat → List Nat
-manip_row _ _ _ [] = []
-manip_row _ (n_pair _ _) (n_pair 0 _) (h ∷ t) = h ∷ t
-manip_row f (n_pair 1 _) (n_pair 1 _) (h ∷ j ∷ t) = h ∷ (f j) ∷ t
-manip_row f (n_pair 0 _) (n_pair 1 _) (h ∷ j ∷ t) = (f h) ∷ (f j) ∷ t
-manip_row f (n_pair 0 _) (n_pair (suc m) _) (h ∷ t) =
-  (f h) ∷ (manip_row f (n_pair 0 0) (n_pair m 0) (t))
-manip_row f (n_pair (suc p) _) (n_pair (suc m) _) (h ∷ t) =
-  h ∷ (manip_row f (n_pair p 0) (n_pair m 0) (t))
+manip-row : (Nat → Nat) → NatPair → NatPair → List Nat → List Nat
+manip-row _ _ _ [] = []
+manip-row _ (n-pair _ _) (n-pair 0 _) (h ∷ t) = h ∷ t
+manip-row f (n-pair 1 _) (n-pair 1 _) (h ∷ j ∷ t) = h ∷ (f j) ∷ t
+manip-row f (n-pair 0 _) (n-pair 1 _) (h ∷ j ∷ t) = (f h) ∷ (f j) ∷ t
+manip-row f (n-pair 0 _) (n-pair (suc m) _) (h ∷ t) =
+  (f h) ∷ (manip-row f (n-pair 0 0) (n-pair m 0) (t))
+manip-row f (n-pair (suc p) _) (n-pair (suc m) _) (h ∷ t) =
+  h ∷ (manip-row f (n-pair p 0) (n-pair m 0) (t))
 
-turn_on_row : NatPair → NatPair → List Nat → List Nat
-turn_on_row p q row = manip_row (λ {x → x + 1}) p q row
+turn-on-row : NatPair → NatPair → List Nat → List Nat
+turn-on-row p q row = manip-row (λ {x → x + 1}) p q row
 
-turn_off_row : NatPair → NatPair → List Nat → List Nat
-turn_off_row p q row = manip_row (λ {x → x - 1}) p q row
+turn-off-row : NatPair → NatPair → List Nat → List Nat
+turn-off-row p q row = manip-row (λ {x → x - 1}) p q row
 
-toggle_row : NatPair → NatPair → List Nat → List Nat
-toggle_row p q row = manip_row (λ {x → x + 2}) p q row
+toggle-row : NatPair → NatPair → List Nat → List Nat
+toggle-row p q row = manip-row (λ {x → x + 2}) p q row
 
-is_vert_match : Nat → NatPair → NatPair → Bool
-is_vert_match idx (n_pair a b) (n_pair x y) = if ((b < (suc idx)) ∧ (idx < (suc y)))
+is-vert-match : Nat → NatPair → NatPair → Bool
+is-vert-match idx (n-pair a b) (n-pair x y) = if ((b < (suc idx)) ∧ (idx < (suc y)))
   then true
   else false
 
-apply_inst_row : Nat → Inst → List Nat → List Nat
-apply_inst_row idx (ton p q) row = if (is_vert_match idx p q) then (turn_on_row p q row) else row
-apply_inst_row idx (tof p q) row = if (is_vert_match idx p q) then (turn_off_row p q row) else row
-apply_inst_row idx (tog p q) row = if (is_vert_match idx p q) then (toggle_row p q row) else row
-apply_inst_row _ _ row = row
+apply-inst-row : Nat → Inst → List Nat → List Nat
+apply-inst-row idx (ton p q) row = if (is-vert-match idx p q) then (turn-on-row p q row) else row
+apply-inst-row idx (tof p q) row = if (is-vert-match idx p q) then (turn-off-row p q row) else row
+apply-inst-row idx (tog p q) row = if (is-vert-match idx p q) then (toggle-row p q row) else row
+apply-inst-row _ _ row = row
 
-apply_inst : Nat → Inst → List (List Nat) → List (List Nat)
-apply_inst idx inst [] = []
-apply_inst idx inst (x ∷ xs) = (apply_inst_row idx inst x) ∷ (apply_inst (suc idx) inst xs)
+apply-inst : Nat → Inst → List (List Nat) → List (List Nat)
+apply-inst idx inst [] = []
+apply-inst idx inst (x ∷ xs) = (apply-inst-row idx inst x) ∷ (apply-inst (suc idx) inst xs)
 
-apply_many : List Inst → List (List Nat) → List (List Nat)
-apply_many [] start = start
-apply_many (x ∷ xs) start = apply_many xs (apply_inst 0 x start)
+apply-many : List Inst → List (List Nat) → List (List Nat)
+apply-many [] start = start
+apply-many (x ∷ xs) start = apply-many xs (apply-inst 0 x start)
 
-count_on :  List (List Nat) → Nat
-count_on inp = foldr _+_ 0 (map (λ {x → (foldr _+_ 0 x)} ) inp)
+count-on :  List (List Nat) → Nat
+count-on inp = foldr _+_ 0 (map (λ {x → (foldr _+_ 0 x)} ) inp)
 
-test_show_two_tog_count : (count_on (apply_inst 0 (tog (n_pair 1 1) (n_pair 2 2)) (populate_empty 3 3))) ≡ 8
-test_show_two_tog_count = refl
+test-show-two-tog-count : (count-on (apply-inst 0 (tog (n-pair 1 1) (n-pair 2 2)) (populate-empty 3 3))) ≡ 8
+test-show-two-tog-count = refl
 
 
-lights_on : String → String
-lights_on x = show (count_on (apply_many (map parse_line (find_parts '\n' (primStringToList x))) (populate_empty 1000 1000)))
+brights-on : String → String
+brights-on x = show (count-on (apply-many (map parse-line (find-parts '\n' (primStringToList x))) (populate-empty 1000 1000)))

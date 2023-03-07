@@ -3,6 +3,7 @@ module util.list_stuff where
 
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (fromList ; toList ; _++_)
+open import Data.String.Properties using () renaming (_==_ to _==s_)
 open import Data.Bool.Base using (Bool; true; false; if_then_else_)
 open import Data.Char.Base as Char using (Char)
 open import Data.Char.Properties using (_==_)
@@ -15,6 +16,22 @@ open import Data.Nat.Show using (readMaybe)
 open import Function.Base using (_on_; _∘′_; _∘_)
 open import Data.Product using (_×_ ; _,_ ; proj₁)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
+
+add-front-list : {A : Set} → List (List A) → A → List (List A)
+add-front-list [] ch = (ch ∷ []) ∷ []
+add-front-list (x ∷ xs) ch with x
+add-front-list (x ∷ xs) ch    | [] = (ch ∷ []) ∷ xs
+add-front-list (x ∷ xs) ch    | (y ∷ ys) = (ch ∷ y ∷ ys) ∷ xs
+
+find-parts : Char → List Char → List (List Char)
+find-parts delim [] = []
+find-parts delim (x ∷ xs) = if x == delim then [] ∷ (find-parts delim xs) else add-front-list (find-parts delim xs) x
+
+unique-insert-str : List String → String → List String
+unique-insert-str [] l = l ∷ []
+unique-insert-str (x ∷ xs) l = if (x ==s l)
+   then x ∷ xs
+   else x ∷ (unique-insert-str xs l)
 
 nat-range : ℕ → List ℕ
 nat-range 0 = []
@@ -29,6 +46,16 @@ min-by-f _ (x ∷ []) = just x
 min-by-f f (x ∷ xs) with (min-by-f f xs)
 min-by-f f (x ∷ xs) | nothing = nothing
 min-by-f f (x ∷ xs) | (just b) = if (f x < f b) then (just x) else (just b)
+
+min-by-fm : {A : Set} → ℕ → List A → (A → Maybe ℕ) → Maybe A
+min-by-fm 0 _ _ = nothing
+min-by-fm (suc l) [] f = nothing
+min-by-fm (suc l) (x ∷ []) f = just x
+min-by-fm (suc l) (x ∷ y ∷ xs) f with (f x)
+min-by-fm (suc l) (x ∷ y ∷ xs) f | (just xr) with (f y)
+min-by-fm (suc l) (x ∷ y ∷ xs) f | (just xr) | (just yr) = if (xr < yr) then (min-by-fm l (x ∷ xs) f) else (min-by-fm l (y ∷ xs) f)
+min-by-fm (suc l) (x ∷ y ∷ xs) f | (just xr) | nothing = nothing
+min-by-fm (suc l) (x ∷ y ∷ xs) f | nothing = nothing
 
 starts-with-ch : List Char → List Char → Bool
 starts-with-ch [] _ = true

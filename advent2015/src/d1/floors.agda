@@ -10,15 +10,25 @@ open import Data.Integer.Show using (show)
 open import Agda.Builtin.List using (List; _∷_ ; [])
 open import Agda.Builtin.Char using (Char)
 open import Data.Char.Properties using (_==_)
-
-count_moves_ch : List Char -> Int
-count_moves_ch [] = pos 0
-count_moves_ch ( x ∷ xs ) =
-  if x == '(' then (count_moves_ch xs) + pos 1
-  else (if x == ')' then (count_moves_ch xs) - pos 1
-  else count_moves_ch xs)
+open import Agda.Builtin.Equality using (refl ; _≡_)
 
 
-count_moves : String → String
-count_moves x = show (count_moves_ch (primStringToList x)) ++ "\n"
+count-moves-ch : List Char -> Int
+count-moves-ch [] = pos 0
+count-moves-ch ( x ∷ xs ) =
+  if x == '(' then (count-moves-ch xs) + pos 1
+  else (if x == ')' then (count-moves-ch xs) - pos 1
+  else count-moves-ch xs)
 
+
+count-moves : String → String
+count-moves x = show (count-moves-ch (primStringToList x)) ++ "\n"
+
+test-count-moves-a : count-moves "(())" ≡ "0\n"
+test-count-moves-a = refl
+
+test-count-moves-b : count-moves "(()(()(" ≡ "3\n"
+test-count-moves-b = refl
+
+test-count-moves-c : count-moves ")())())" ≡ "-3\n"
+test-count-moves-c = refl

@@ -13,17 +13,17 @@ open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Function.Base using (_∘_)
 
-rem_lst_q : List Char → List Char
-rem_lst_q [] = []
-rem_lst_q ('"' ∷ []) = []
-rem_lst_q (x ∷ xs) = x ∷ (rem_lst_q xs)
+rem-lst-q : List Char → List Char
+rem-lst-q [] = []
+rem-lst-q ('"' ∷ []) = []
+rem-lst-q (x ∷ xs) = x ∷ (rem-lst-q xs)
 
-rem_fst_q : List Char → List Char
-rem_fst_q ('"' ∷ xs) = xs
-rem_fst_q x = x
+rem-fst-q : List Char → List Char
+rem-fst-q ('"' ∷ xs) = xs
+rem-fst-q x = x
 
-remove_quotes : List Char → List Char
-remove_quotes = rem_fst_q ∘ rem_lst_q
+remove-quotes : List Char → List Char
+remove-quotes = rem-fst-q ∘ rem-lst-q
 
 requote : List Char → List Char
 requote x = ('"' ∷ x) ++ ('"' ∷ [])
@@ -43,23 +43,23 @@ escape ('"' ∷ xs) = '\\' ∷ '"' ∷ (escape xs)
 escape ('\\' ∷ xs) = '\\' ∷ '\\' ∷ (escape xs)
 escape (x ∷ xs) = x ∷ (escape xs)
 
-single_rel_size : List Char -> Nat
-single_rel_size inp = (length inp) - ((length ∘ remove_quotes ∘ unescape) inp)
+single-rel-size : List Char -> Nat
+single-rel-size inp = (length inp) - ((length ∘ remove-quotes ∘ unescape) inp)
 
-single_rel_size_rev : List Char -> Nat
-single_rel_size_rev inp = ((length ∘ requote ∘ escape) inp) - (length inp)
+single-rel-size-rev : List Char -> Nat
+single-rel-size-rev inp = ((length ∘ requote ∘ escape) inp) - (length inp)
 
-rel_size : String → String
-rel_size x = show (foldr _+_ 0 (map (single_rel_size ∘ toList) (lines x)))
+rel-size : String → String
+rel-size x = show (foldr _+_ 0 (map (single-rel-size ∘ toList) (lines x)))
 
-rel_size_rev : String → String
-rel_size_rev x = show (foldr _+_ 0 (map (single_rel_size_rev ∘ toList) (lines x)))
+rel-size-rev : String → String
+rel-size-rev x = show (foldr _+_ 0 (map (single-rel-size-rev ∘ toList) (lines x)))
 
-test_rem_q : (fromList ∘ remove_quotes ∘ toList) "\"c\"" ≡ "c"
-test_rem_q = refl
+test-rem-q : (fromList ∘ remove-quotes ∘ toList) "\"c\"" ≡ "c"
+test-rem-q = refl
 
-test_rel_size : rel_size "\"\"\n\"abc\"\n\"aaa\\\"aaa\"\n\"\\x27\"" ≡ "12"
-test_rel_size = refl
+test-rel-size : rel-size "\"\"\n\"abc\"\n\"aaa\\\"aaa\"\n\"\\x27\"" ≡ "12"
+test-rel-size = refl
 
-test_rel_size_rev : rel_size_rev "\"\"\n\"abc\"\n\"aaa\\\"aaa\"\n\"\\x27\"" ≡ "19"
-test_rel_size_rev = refl
+test-rel-size-rev : rel-size-rev "\"\"\n\"abc\"\n\"aaa\\\"aaa\"\n\"\\x27\"" ≡ "19"
+test-rel-size-rev = refl

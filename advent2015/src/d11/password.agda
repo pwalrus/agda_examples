@@ -18,82 +18,82 @@ open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Relation.Nullary.Decidable using (isYes)
 open import Function.Base using (_∘_)
 
-inc_char : Char → (Char × Bool)
-inc_char 'z' = 'a' , true
-inc_char x =  (primNatToChar ∘ suc ∘ primCharToNat) x , false
+inc-char : Char → (Char × Bool)
+inc-char 'z' = 'a' , true
+inc-char x =  (primNatToChar ∘ suc ∘ primCharToNat) x , false
 
-inc_pass_help : List Char → Bool × List Char
-inc_pass_help [] = false , []
-inc_pass_help (x ∷ []) with (inc_char x)
-inc_pass_help (x ∷ []) | (y , f) = f , (y ∷ [])
-inc_pass_help (x ∷ xs) with (inc_pass_help xs)
-inc_pass_help (x ∷ xs) | (false , t) = false , (x ∷ t)
-inc_pass_help (x ∷ xs) | (true , t) with (inc_char x)
-inc_pass_help (x ∷ xs) | (true , t) | (z , f) = f , (z ∷ t)
+inc-pass-help : List Char → Bool × List Char
+inc-pass-help [] = false , []
+inc-pass-help (x ∷ []) with (inc-char x)
+inc-pass-help (x ∷ []) | (y , f) = f , (y ∷ [])
+inc-pass-help (x ∷ xs) with (inc-pass-help xs)
+inc-pass-help (x ∷ xs) | (false , t) = false , (x ∷ t)
+inc-pass-help (x ∷ xs) | (true , t) with (inc-char x)
+inc-pass-help (x ∷ xs) | (true , t) | (z , f) = f , (z ∷ t)
 
 snd : {A B : Set} → A × B → B
 snd (x , y) = y
 
-inc_pass : String → String
-inc_pass  = fromList ∘ snd ∘ inc_pass_help ∘ toList
+inc-pass : String → String
+inc-pass  = fromList ∘ snd ∘ inc-pass-help ∘ toList
 
-n_eq : Nat → Nat → Bool
-n_eq a b = isYes (a ≟ b)
+n-eq : Nat → Nat → Bool
+n-eq a b = isYes (a ≟ b)
 
-fst_cond : List Char → Bool
-fst_cond [] = false
-fst_cond (_ ∷ []) = false
-fst_cond (_ ∷ _ ∷ []) = false
-fst_cond (a ∷ b ∷ c ∷ xs) = ((n_eq (suc (primCharToNat a)) (primCharToNat b)) ∧ (n_eq (suc (primCharToNat b)) (primCharToNat c))) ∨ (fst_cond (b ∷ c ∷ xs))
+fst-cond : List Char → Bool
+fst-cond [] = false
+fst-cond (_ ∷ []) = false
+fst-cond (_ ∷ _ ∷ []) = false
+fst-cond (a ∷ b ∷ c ∷ xs) = ((n-eq (suc (primCharToNat a)) (primCharToNat b)) ∧ (n-eq (suc (primCharToNat b)) (primCharToNat c))) ∨ (fst-cond (b ∷ c ∷ xs))
 
-snd_cond_b : List Char → Bool
-snd_cond_b [] = false
-snd_cond_b (_ ∷ []) = false
-snd_cond_b (a ∷ b ∷ xs) = (a == b) ∨ (snd_cond_b (b ∷ xs))
+snd-cond-b : List Char → Bool
+snd-cond-b [] = false
+snd-cond-b (_ ∷ []) = false
+snd-cond-b (a ∷ b ∷ xs) = (a == b) ∨ (snd-cond-b (b ∷ xs))
 
-snd_cond : List Char → Bool
-snd_cond [] = false
-snd_cond (_ ∷ []) = false
-snd_cond (_ ∷ _ ∷ []) = false
-snd_cond (a ∷ b ∷ xs) = ((a == b) ∧ (snd_cond_b xs)) ∨ (snd_cond (b ∷ xs))
+snd-cond : List Char → Bool
+snd-cond [] = false
+snd-cond (_ ∷ []) = false
+snd-cond (_ ∷ _ ∷ []) = false
+snd-cond (a ∷ b ∷ xs) = ((a == b) ∧ (snd-cond-b xs)) ∨ (snd-cond (b ∷ xs))
 
-trd_cond : List Char → Bool
-trd_cond [] = true
-trd_cond (x ∷ xs) = if ((x == 'i') ∨ (x == 'o') ∨ (x == 'l')) then false else (trd_cond xs)
+trd-cond : List Char → Bool
+trd-cond [] = true
+trd-cond (x ∷ xs) = if ((x == 'i') ∨ (x == 'o') ∨ (x == 'l')) then false else (trd-cond xs)
 
 
-iter_inc : Nat → String → String
-iter_inc 0 _ = ""
-iter_inc (suc l) y = if ((fst_cond x_ch) ∧ (snd_cond x_ch) ∧ (trd_cond x_ch)) then x else (iter_inc l x)
+iter-inc : Nat → String → String
+iter-inc 0 _ = ""
+iter-inc (suc l) y = if ((fst-cond x-ch) ∧ (snd-cond x-ch) ∧ (trd-cond x-ch)) then x else (iter-inc l x)
   where
     x : String
-    x = inc_pass y
-    x_ch : List Char
-    x_ch = toList x
+    x = inc-pass y
+    x-ch : List Char
+    x-ch = toList x
 
-next_pass : String → String
-next_pass x = "\nsol :" ++ (iter_inc 10000000 x) ++ "\n"
+next-pass : String → String
+next-pass x = "\nsol :" ++ (iter-inc 10000000 x) ++ "\n"
 
-test_inc_pass : inc_pass "abzz" ≡ "acaa"
-test_inc_pass = refl
+test-inc-pass : inc-pass "abzz" ≡ "acaa"
+test-inc-pass = refl
 
-test_fst_cond_t : fst_cond (toList "sssqrswww") ≡ true
-test_fst_cond_t = refl
+test-fst-cond-t : fst-cond (toList "sssqrswww") ≡ true
+test-fst-cond-t = refl
 
-test_fst_cond_f : fst_cond (toList "sssqswww") ≡ false
-test_fst_cond_f = refl
+test-fst-cond-f : fst-cond (toList "sssqswww") ≡ false
+test-fst-cond-f = refl
 
-test_snd_cond_t : snd_cond (toList "saaswwt") ≡ true
-test_snd_cond_t = refl
+test-snd-cond-t : snd-cond (toList "saaswwt") ≡ true
+test-snd-cond-t = refl
 
-test_snd_cond_f : snd_cond (toList "saaat") ≡ false
-test_snd_cond_f = refl
+test-snd_cond-f : snd-cond (toList "saaat") ≡ false
+test-snd_cond-f = refl
 
-test_trd_cond_t : trd_cond (toList "saaat") ≡ true
-test_trd_cond_t = refl
+test-trd-cond-t : trd-cond (toList "saaat") ≡ true
+test-trd-cond-t = refl
 
-test_trd_cond_f : trd_cond (toList "saoaat") ≡ false
-test_trd_cond_f = refl
+test-trd-cond-f : trd-cond (toList "saoaat") ≡ false
+test-trd-cond-f = refl
 
-test_iter_inc : iter_inc 10000 "abcffga" ≡ "abcffgg"
-test_iter_inc = refl
+test-iter-inc : iter-inc 10000 "abcffga" ≡ "abcffgg"
+test-iter-inc = refl

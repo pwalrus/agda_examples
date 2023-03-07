@@ -7,38 +7,46 @@ open import Data.Nat.Show using (show)
 open import Agda.Builtin.Char using (Char)
 open import Agda.Builtin.String using (String ; primStringToList)
 
-open import d2.boxes using (nat_parts ; find_parts)
-
-merge_smallest : Nat → List Nat → Nat → List Nat
-merge_smallest 0 _ _ = []
-merge_smallest (suc n) [] p = p ∷ []
-merge_smallest (suc n) (x ∷ xs) p = if p < x
-  then (p ∷ (merge_smallest n xs x))
-  else (x ∷ (merge_smallest n xs p))
-
-min_two_helper : List Nat → List Nat → List Nat
-min_two_helper found [] = found
-min_two_helper found (x ∷ xs) = min_two_helper (merge_smallest 2 found x) xs
-
-min_two : List Nat → List Nat
-min_two lst = min_two_helper [] lst
-
-calc_param : List Nat → Nat
-calc_param lst =  2 * (foldr _+_ 0 (min_two lst))
+open import d2.boxes using (nat-parts ; find-parts)
+open import Agda.Builtin.Equality using (refl ; _≡_)
 
 
-calc_bow : List Nat -> Nat
-calc_bow x = foldr _*_ 1 x
+merge-smallest : Nat → List Nat → Nat → List Nat
+merge-smallest 0 _ _ = []
+merge-smallest (suc n) [] p = p ∷ []
+merge-smallest (suc n) (x ∷ xs) p = if p < x
+  then (p ∷ (merge-smallest n xs x))
+  else (x ∷ (merge-smallest n xs p))
 
-combine_parts : List Nat → Nat
-combine_parts parts = (calc_bow parts) + (calc_param parts)
+min-two-helper : List Nat → List Nat → List Nat
+min-two-helper found [] = found
+min-two-helper found (x ∷ xs) = min-two-helper (merge-smallest 2 found x) xs
 
-parse_and_calc : List Char → Nat
-parse_and_calc x = combine_parts ( nat_parts ( find_parts 'x' x)) 
+min-two : List Nat → List Nat
+min-two lst = min-two-helper [] lst
 
-parse_and_calc_all : String → Nat
-parse_and_calc_all inp = foldr _+_ 0 (map parse_and_calc (find_parts '\n' (primStringToList inp)))
+calc-param : List Nat → Nat
+calc-param lst =  2 * (foldr _+_ 0 (min-two lst))
 
 
-calc_ribbon : String → String
-calc_ribbon x = show (parse_and_calc_all x)
+calc-bow : List Nat -> Nat
+calc-bow x = foldr _*_ 1 x
+
+combine-parts : List Nat → Nat
+combine-parts parts = (calc-bow parts) + (calc-param parts)
+
+parse-and-calc : List Char → Nat
+parse-and-calc x = combine-parts ( nat-parts ( find-parts 'x' x)) 
+
+parse-and-calc-all : String → Nat
+parse-and-calc-all inp = foldr _+_ 0 (map parse-and-calc (find-parts '\n' (primStringToList inp)))
+
+
+calc-ribbon : String → String
+calc-ribbon x = show (parse-and-calc-all x)
+
+test-calc-ribbon-a : parse-and-calc (primStringToList "2x3x4") ≡ 34
+test-calc-ribbon-a = refl
+
+test-calc-ribbon-b : parse-and-calc (primStringToList "1x1x10") ≡ 14
+test-calc-ribbon-b = refl

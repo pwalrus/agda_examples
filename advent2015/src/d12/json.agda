@@ -40,25 +40,25 @@ add-up-all-h (suc l) (dict d) | false = foldr _+_ (pos 0) (map ((add-up-all-h l)
 add-up-all-h (suc l) (dict d) | true = pos 0
 add-up-all-h _ _ = pos 0
 
-sum-all : String → String
-sum-all x with (parse-json x)
-sum-all x | nothing = "\nfailed parse\n"
-sum-all x | (just tree) = "\ncount: " ++ (show (add-up-all-h ((length ∘ toList) x) tree)) ++ "\n"
+sum-all-json : String → String
+sum-all-json x with (parse-json x)
+sum-all-json x | nothing = "\nfailed parse\n"
+sum-all-json x | (just tree) = "\ncount: " ++ (show (add-up-all-h ((length ∘ toList) x) tree)) ++ "\n"
 
-test-add-up-all-a : sum-all "[1,2,3]" ≡ "\ncount: 6\n"
+test-add-up-all-a : sum-all-json "[1,2,3]" ≡ "\ncount: 6\n"
 test-add-up-all-a = refl
 
-test-add-up-all-aa : sum-all "{\"a\":2,\"b\":4}" ≡ "\ncount: 6\n"
+test-add-up-all-aa : sum-all-json "{\"a\":2,\"b\":4}" ≡ "\ncount: 6\n"
 test-add-up-all-aa = refl
 
-test-add-up-all-b : sum-all "[[[3]]]" ≡ "\ncount: 3\n"
+test-add-up-all-b : sum-all-json "[[[3]]]" ≡ "\ncount: 3\n"
 test-add-up-all-b = refl
 
-test-add-up-all-ba : sum-all "{\"a\":{\"b\":4},\"c\":-1}" ≡ "\ncount: 3\n"
+test-add-up-all-ba : sum-all-json "{\"a\":{\"b\":4},\"c\":-1}" ≡ "\ncount: 3\n"
 test-add-up-all-ba = refl
 
-test-add-up-all-c : sum-all "{\"a\":[-1,1]}" ≡ "\ncount: 0\n"
+test-add-up-all-c : sum-all-json "{\"a\":[-1,1]}" ≡ "\ncount: 0\n"
 test-add-up-all-c = refl
 
-test-add-up-all-d : sum-all "[]" ≡ "\ncount: 0\n"
+test-add-up-all-d : sum-all-json "[]" ≡ "\ncount: 0\n"
 test-add-up-all-d = refl

@@ -16,18 +16,21 @@ open import Agda.Builtin.List using (List; _∷_ ; [])
 open import Agda.Builtin.Char using (Char)
 open import Data.Char.Properties using (_==_)
 open import Relation.Nullary.Decidable.Core using (isYes)
-
-is_neg_one : Int -> Nat -> Nat -> Nat
-is_neg_one i y n = if isYes ((negsuc 0) ≟ i) then y else n
-
-find_enter_ch : List Char -> Int -> Nat -> Nat
-find_enter_ch [] start idx = is_neg_one start idx 0 
-find_enter_ch ( x ∷ xs ) start idx = is_neg_one start idx (
-  if x == '(' then find_enter_ch xs (start + pos 1) (suc idx)
-  else (if x == ')' then find_enter_ch xs (start - pos 1) (suc idx)
-  else find_enter_ch xs start (suc idx)))
+open import Agda.Builtin.Equality using (refl ; _≡_)
 
 
-count_moves : String → String
-count_moves x = show (find_enter_ch (primStringToList x) (pos 0) 0) ++ "\n"
+is-neg-one : Int -> Nat -> Nat -> Nat
+is-neg-one i y n = if isYes ((negsuc 0) ≟ i) then y else n
 
+find-enter-ch : List Char -> Int -> Nat -> Nat
+find-enter-ch [] start idx = is-neg-one start idx 0 
+find-enter-ch ( x ∷ xs ) start idx = is-neg-one start idx (
+  if x == '(' then find-enter-ch xs (start + pos 1) (suc idx)
+  else (if x == ')' then find-enter-ch xs (start - pos 1) (suc idx)
+  else find-enter-ch xs start (suc idx)))
+
+count-enters : String → String
+count-enters x = show (find-enter-ch (primStringToList x) (pos 0) 0) ++ "\n"
+
+test-count-enters : count-enters "()())" ≡ "5\n"
+test-count-enters = refl

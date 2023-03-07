@@ -10,61 +10,61 @@ open import Data.Nat.Show using (show)
 open import Agda.Builtin.String using (String ; primStringToList ; primStringFromList)
 open import Data.String using (_++_)
 open import Agda.Builtin.Bool using (Bool ; true; false)
-open import d2.boxes using (find_parts)
-open import d5.nice_word using (n_bool)
+open import util.list_stuff using (find-parts)
+open import d5.nice_word using (n-bool)
 
 record WordQual : Set where
   field
-    has_dd : Bool
-    has_rep : Bool
+    has-dd : Bool
+    has-rep : Bool
 
-default_qual : WordQual
-default_qual = record {
-  has_dd = false ;
-  has_rep = false
+default-qual : WordQual
+default-qual = record {
+  has-dd = false ;
+  has-rep = false
   }
 
-add_dd : WordQual -> WordQual
-add_dd old = record {
-  has_dd = true ;
-  has_rep = WordQual.has_rep old 
+add-dd : WordQual -> WordQual
+add-dd old = record {
+  has-dd = true ;
+  has-rep = WordQual.has-rep old 
   }
 
-add_rep : WordQual -> WordQual
-add_rep old = record {
-  has_dd = WordQual.has_dd old ;
-  has_rep = true
+add-rep : WordQual -> WordQual
+add-rep old = record {
+  has-dd = WordQual.has-dd old ;
+  has-rep = true
   }
 
-show_wq : WordQual -> String
-show_wq qual = 
-  (show (n_bool (WordQual.has_dd qual))) ++ ";" ++ 
-  (show (n_bool (WordQual.has_rep qual))) ++ " "
+show-wq : WordQual -> String
+show-wq qual = 
+  (show (n-bool (WordQual.has-dd qual))) ++ ";" ++ 
+  (show (n-bool (WordQual.has-rep qual))) ++ " "
 
-is_nice : WordQual → Bool
-is_nice qual = (WordQual.has_dd qual) ∧ (WordQual.has_rep qual)
+is-nice : WordQual → Bool
+is-nice qual = (WordQual.has-dd qual) ∧ (WordQual.has-rep qual)
 
-check_dd_help : Char → Char → List Char → Bool
-check_dd_help _ _ [] = false
-check_dd_help _ _ (x ∷ []) = false
-check_dd_help a b (l ∷ r ∷ xs) = ((a == l) ∧ (b == r)) ∨ check_dd_help a b (r ∷ xs)
+check-dd-help : Char → Char → List Char → Bool
+check-dd-help _ _ [] = false
+check-dd-help _ _ (x ∷ []) = false
+check-dd-help a b (l ∷ r ∷ xs) = ((a == l) ∧ (b == r)) ∨ check-dd-help a b (r ∷ xs)
 
-check_dd : List Char → Bool
-check_dd [] = false
-check_dd (x ∷ []) = false
-check_dd (l ∷ r ∷ xs) = (check_dd_help l r xs) ∨ check_dd (r ∷ xs)
+check-dd : List Char → Bool
+check-dd [] = false
+check-dd (x ∷ []) = false
+check-dd (l ∷ r ∷ xs) = (check-dd-help l r xs) ∨ check-dd (r ∷ xs)
 
-check_rep : List Char → Bool
-check_rep [] = false
-check_rep (x ∷ []) = false
-check_rep (a ∷ b ∷ []) = false
-check_rep (a ∷ b ∷ c ∷ xs) = (a == c) ∨ check_rep (b ∷ c ∷ xs)
+check-rep : List Char → Bool
+check-rep [] = false
+check-rep (x ∷ []) = false
+check-rep (a ∷ b ∷ []) = false
+check-rep (a ∷ b ∷ c ∷ xs) = (a == c) ∨ check-rep (b ∷ c ∷ xs)
 
-eval_word : List Char → WordQual
-eval_word x = record {has_dd = check_dd x ; has_rep = check_rep x}
+eval-word : List Char → WordQual
+eval-word x = record {has-dd = check-dd x ; has-rep = check-rep x}
 
-judge_word : List Char → Nat
-judge_word x = n_bool (is_nice (eval_word x))
+judge-word : List Char → Nat
+judge-word x = n-bool (is-nice (eval-word x))
 
-judge_words : String → String
-judge_words x = show (foldr _+_ 0 (map judge_word (find_parts '\n' (primStringToList x)))) ++ "\n"
+judge-words-b : String → String
+judge-words-b x = show (foldr _+_ 0 (map judge-word (find-parts '\n' (primStringToList x)))) ++ "\n"

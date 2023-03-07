@@ -29,27 +29,27 @@ conv [] = ""
 conv ([] ∷ xs) = conv xs
 conv ((h ∷ t) ∷ xs) = (show (length (h ∷ t))) ++ (fromList (h ∷ [])) ++ conv xs
 
-look_and_see : String → String
-look_and_see = conv ∘ conseq ∘ toList
+look-and-see : String → String
+look-and-see = conv ∘ conseq ∘ toList
 
-look_and_see_iter : Nat → String → String
-look_and_see_iter 0 x = x
-look_and_see_iter (suc p) x = look_and_see_iter p (look_and_see x)
+look-and-see-iter : Nat → String → String
+look-and-see-iter 0 x = x
+look-and-see-iter (suc p) x = look-and-see-iter p (look-and-see x)
 
-look_and_see_len : String → String
-look_and_see_len = show ∘ length ∘ toList ∘ (look_and_see_iter 50)
+look-and-see-len : String → String
+look-and-see-len = show ∘ length ∘ toList ∘ (look-and-see-iter 50)
 
-test_look_and_seea : look_and_see "1"  ≡ "11"
-test_look_and_seea = refl
+test-look-and-seea : look-and-see "1"  ≡ "11"
+test-look-and-seea = refl
 
-test_look_and_seeb : look_and_see "11"  ≡ "21"
-test_look_and_seeb = refl
+test-look-and-seeb : look-and-see "11"  ≡ "21"
+test-look-and-seeb = refl
 
-test_look_and_seec : look_and_see "21"  ≡ "1211"
-test_look_and_seec = refl
+test-look-and-seec : look-and-see "21"  ≡ "1211"
+test-look-and-seec = refl
 
-test_look_and_seed : look_and_see "1211"  ≡ "111221"
-test_look_and_seed = refl
+test-look-and-seed : look-and-see "1211"  ≡ "111221"
+test-look-and-seed = refl
 
-test_look_and_seee : look_and_see "111221"  ≡ "312211"
-test_look_and_seee = refl
+test-look-and-seee : look-and-see "111221"  ≡ "312211"
+test-look-and-seee = refl
