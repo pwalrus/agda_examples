@@ -159,8 +159,8 @@ break-comma x = break-comma-h (suc (length x)) x
 parse-colon : (List Char → Maybe JsonObj) → List Char → Maybe (String × JsonObj)
 parse-colon f inp with (read-char-h [] ':' inp)
 parse-colon f inp | nothing = nothing
-parse-colon f inp | (just (h , t)) with (f h)
-parse-colon f inp | (just (h , t)) | (just (str key)) with (f t)
+parse-colon f inp | (just (h , t)) with ((f ∘ trim) h)
+parse-colon f inp | (just (h , t)) | (just (str key)) with ((f ∘ trim) t)
 parse-colon f inp | (just (h , t)) | (just (str key)) | (just val) = just (key , val)
 parse-colon f inp | (just (h , t)) | (just (str key)) | nothing = nothing
 parse-colon f inp | (just (h , t)) | _ = nothing
@@ -178,7 +178,7 @@ parse-json-h (suc l) ('[' ∷ xs) | (just parts) with (unmaybe (map ((parse-json
 parse-json-h (suc l) ('[' ∷ xs) | (just parts) | real-parts = just (lst real-parts)
 parse-json-h (suc l) ('[' ∷ xs) | nothing = nothing
 parse-json-h (suc l) ('{' ∷ xs) with ((break-comma ∘ remove-cl ∘ proj₁ ∘ take-dict) ('{' ∷ xs))
-parse-json-h (suc l) ('{' ∷ xs) | (just parts) with (unmaybe (map (parse-colon (parse-json-h l) ) parts))
+parse-json-h (suc l) ('{' ∷ xs) | (just parts) with (unmaybe (map ((parse-colon (parse-json-h l) ∘ trim) ) parts))
 parse-json-h (suc l) ('{' ∷ xs) | (just parts) | keys = just (dict keys)
 parse-json-h (suc l) ('{' ∷ xs) | nothing = nothing
 parse-json-h _ (x ∷ xs) with ((readIntMaybe ∘ trim) (x ∷ xs))
@@ -251,3 +251,13 @@ test-is-balancedd = refl
 
 test-serial : (show-maybe ∘ parse-json) "{\"a\":[1,2,3],\"b\":[4,5,6]}" ≡ "{\"a\": [1,2,3],\"b\": [4,5,6]}"
 test-serial = refl
+
+test-serial-spaces-a : (show-maybe ∘ parse-json) "  [ 1 , 2 , 3 ] " ≡ "[1,2,3]"
+test-serial-spaces-a = refl
+
+test-serial-spaces-b : (show-maybe ∘ parse-json) " { \"a\" :  1 ,  \"b\" :  4  } " ≡ "{\"a\": 1,\"b\": 4}"
+test-serial-spaces-b = refl
+
+test-serial-spaces-c : (show-maybe ∘ parse-json) " { \"a\" : [ 1 , 2 , 3 ] , \"b\" : [ 4 , 5 , 6 ] } " ≡ "{\"a\": [1,2,3],\"b\": [4,5,6]}"
+test-serial-spaces-c = refl
+

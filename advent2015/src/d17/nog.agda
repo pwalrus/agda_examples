@@ -1,7 +1,7 @@
 module d17.nog where
 
 open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms ; rem-dot)
-open import util.lookup using (LookupStrTree ; build-str-tree ; has_val ; set_val ; all_values ; LTPair) renaming (read_val to read-tree)
+open import util.lookup using (LookupStrTree ; build-str-tree ; has-val ; set-val ; all-values ; LTPair) renaming (read-val to read-tree)
 open import util.json using (readIntMaybe)
 open import Data.Tree.Binary using (leaf ; node)
 open import Agda.Builtin.String using (String)

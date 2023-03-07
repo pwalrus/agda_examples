@@ -2,7 +2,7 @@
 module d21.rpg where
 
 open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms ; rem-dot ; append-front-all ; all-replacements ; cartproduct) renaming (trim to trim-ch)
-open import util.lookup using (LookupNatTree ; build-nat-tree ; has_val ; all_values ; all-keys ; all-kv ; LTPair) renaming (set_val to set-tree ; read_val to read-tree)
+open import util.lookup using (LookupNatTree ; build-nat-tree ; has-val ; all-values ; all-keys ; all-kv ; LTPair) renaming (set-val to set-tree ; read-val to read-tree)
 open import util.json using (readIntMaybe)
 open import Data.Tree.Binary using (leaf ; node)
 open import Agda.Builtin.String using (String)

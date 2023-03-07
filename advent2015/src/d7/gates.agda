@@ -5,8 +5,8 @@ module d7.gates where
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (_++_; toList; fromList; padLeft ; unlines)
 open import Data.String.Properties using (_==_ ; _<?_)
-open import util.list_stuff using (words ; lines ; parse_nat)
-open import util.lookup using (LookupTree ; build_tree ; has_val ; set_val ; all_values) renaming (read_val to read_tree)
+open import util.list_stuff using (words ; lines ; parse-nat)
+open import util.lookup using (LookupTree ; build-tree ; has-val ; set-val ; all-values) renaming (read-val to read_tree)
 open import Agda.Builtin.List using (List ; _∷_ ; [])
 open import Data.Product using (_×_; _,_)
 open import Data.List.Base using (map ; length)
@@ -136,8 +136,8 @@ str_lt : String → String → Bool
 str_lt a b = isYes (a <? b)
 
 mk_tree : List Inst → LookupTree String Inst
-mk_tree [] = build_tree _==_ str_lt []
-mk_tree x = build_tree _==_ str_lt (map (λ {i → (out_wire i , i) }) x)
+mk_tree [] = build-tree _==_ str_lt []
+mk_tree x = build-tree _==_ str_lt (map (λ {i → (out_wire i , i) }) x)
 
 -- works on smaller examples but needs too much memory for the full puzzle
 read-val-rec : Nat → TermUnion → LookupTree String Inst → RecResult
@@ -181,7 +181,7 @@ find-init-know ((assignop (litu l) wire) ∷ xs) = (assm wire l) ∷ (find-init-
 find-init-know (_ ∷ xs) = (find-init-know xs)
 
 mk-assm-tree : List Inst → LookupTree String Assignment
-mk-assm-tree inp = build_tree _==_ str_lt (map (λ {(assm wire l) → (wire , (assm wire l)) }) (find-init-know inp))
+mk-assm-tree inp = build-tree _==_ str_lt (map (λ {(assm wire l) → (wire , (assm wire l)) }) (find-init-know inp))
 
 needed-inputs : Inst → List TermUnion
 needed-inputs (assignop wa _) = wa ∷ []
@@ -192,7 +192,7 @@ needed-inputs _ = []
 all-known : List TermUnion → LookupTree String Assignment → Bool
 all-known [] _ = true
 all-known ((litu l) ∷ xs) known = (all-known xs known)
-all-known ((wireu w) ∷ xs) known = (has_val w known) ∧ (all-known xs known)
+all-known ((wireu w) ∷ xs) known = (has-val w known) ∧ (all-known xs known)
 
 replace-known : TermUnion → LookupTree String Assignment → TermUnion
 replace-known (litu l) db = litu l
@@ -216,8 +216,8 @@ find-next-known (x ∷ xs) db known | (just inst) | terms with (all-known terms 
 find-next-known (x ∷ xs) db known | (just inst) | terms | false with (find-next-known xs db known)
 find-next-known (x ∷ xs) db known | (just inst) | terms | false | (needed , nassm) = ((x ∷ needed) , nassm)
 find-next-known (x ∷ xs) db known | (just inst) | terms | true with (calc-inst (replace-known_inst inst known) [] )
-find-next-known (x ∷ xs) db known | (just inst) | terms | true | nothing = (find-next-known xs db (set_val x (assm x 1000000) known))
-find-next-known (x ∷ xs) db known | (just inst) | terms | true | (just v) = (find-next-known xs db (set_val x (assm x v) known))
+find-next-known (x ∷ xs) db known | (just inst) | terms | true | nothing = (find-next-known xs db (set-val x (assm x 1000000) known))
+find-next-known (x ∷ xs) db known | (just inst) | terms | true | (just v) = (find-next-known xs db (set-val x (assm x v) known))
 
 find-next-iter : Nat → List String → LookupTree String Inst → LookupTree String Assignment → LookupTree String Assignment
 find-next-iter 0 _ _ known = known
@@ -272,7 +272,7 @@ test-one-and = refl
 
 run-sim : String → String
 run-sim x =
-  unlines (map show-assm (all_values atree)) ++ "\n"
+  unlines (map show-assm (all-values atree)) ++ "\n"
   where
     atree = (find-next-iter (suc(length (lines x)))
       (map out_wire db)

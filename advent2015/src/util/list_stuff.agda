@@ -148,12 +148,12 @@ filterᵇ : {A : Set} → (A → Bool) → List A → List A
 filterᵇ p []       = []
 filterᵇ p (x ∷ xs) = if p x then x ∷ filterᵇ p xs else filterᵇ p xs
 
-parse_nat : String → ℕ
-parse_nat x = def_zero (readMaybe 10 x)
+parse-nat : String → ℕ
+parse-nat x = def-zero (readMaybe 10 x)
   where
-    def_zero : Maybe ℕ → ℕ
-    def_zero (just q) = q
-    def_zero _ = 0
+    def-zero : Maybe ℕ → ℕ
+    def-zero (just q) = q
+    def-zero _ = 0
 
 ListlinesByᵇ : {A : Set} → (A → Bool) → List A → List (List A)
 ListlinesByᵇ {A = A} p = go nothing

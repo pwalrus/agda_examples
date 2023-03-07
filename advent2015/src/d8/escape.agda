@@ -1,7 +1,7 @@
 
 module d8.escape where
 
-open import util.list_stuff using (words ; lines ; parse_nat)
+open import util.list_stuff using (words ; lines ; parse-nat)
 open import Agda.Builtin.Char using (Char ; primNatToChar )
 open import Agda.Builtin.Nat using (Nat ; suc ; _+_ ; _-_)
 open import Data.Nat.Show using (show ; readMaybe)

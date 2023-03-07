@@ -1,7 +1,7 @@
 module d15.cookie where
 
 open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms ; rem-dot)
-open import util.lookup using (LookupTree ; build_tree ; has_val ; set_val ; all_values ; LTPair) renaming (read_val to read_tree)
+open import util.lookup using (LookupTree ; build-tree ; has-val ; set-val ; all-values ; LTPair) renaming (read-val to read-tree)
 open import util.json using (readIntMaybe)
 open import Data.Tree.Binary using (leaf ; node)
 open import Agda.Builtin.String using (String)

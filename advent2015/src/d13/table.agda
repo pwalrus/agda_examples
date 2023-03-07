@@ -1,7 +1,7 @@
 module d13.table where
 
 open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms)
-open import util.lookup using (LookupTree ; build_tree ; has_val ; set_val ; all_values) renaming (read_val to read_tree)
+open import util.lookup using (LookupTree ; build-tree ; has-val ; set-val ; all-values) renaming (read-val to read-tree)
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (toList ; fromList ; _++_ ; unlines)
 open import Data.String.Properties using (_==_)

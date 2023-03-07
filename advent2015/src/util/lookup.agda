@@ -29,60 +29,60 @@ LookupStrTree A = Tree (LTPair String A) Bool
 LookupNatTree : Set → Set
 LookupNatTree A = Tree (LTPair Nat A) Bool
 
-mk_pair : {A B : Set} → (A → A → Bool) → (A → A → Bool) → (A × B) → LTPair A B
-mk_pair eq lt (k , v) = record {Eq = eq ; Lt = lt ; key = k; val = v}
+mk-pair : {A B : Set} → (A → A → Bool) → (A → A → Bool) → (A × B) → LTPair A B
+mk-pair eq lt (k , v) = record {Eq = eq ; Lt = lt ; key = k; val = v}
 
 lp : {A B : Set} → (A × B) → A
 lp (x , _) = x
 
-build_tree_help : {A B : Set} → Nat → (A → A → Bool) → (A → A → Bool) → List (A × B) → LookupTree A B
-build_tree_help _ eq lt [] = leaf false
-build_tree_help 0 eq lt _ = leaf false
-build_tree_help (suc l) eq lt ((x , y) ∷ xs) = node
-  (build_tree_help l eq lt (filterᵇ (λ { q → lt x (lp q) }) xs ))
-  (mk_pair eq lt (x , y))
-  (build_tree_help l eq lt (filterᵇ (λ { q → lt (lp q) x }) xs ))
+build-tree-help : {A B : Set} → Nat → (A → A → Bool) → (A → A → Bool) → List (A × B) → LookupTree A B
+build-tree-help _ eq lt [] = leaf false
+build-tree-help 0 eq lt _ = leaf false
+build-tree-help (suc l) eq lt ((x , y) ∷ xs) = node
+  (build-tree-help l eq lt (filterᵇ (λ { q → lt x (lp q) }) xs ))
+  (mk-pair eq lt (x , y))
+  (build-tree-help l eq lt (filterᵇ (λ { q → lt (lp q) x }) xs ))
 
-build_tree : {A B : Set} → (A → A → Bool) → (A → A → Bool) → List (A × B) → LookupTree A B
-build_tree eq lt db = build_tree_help (length db) eq lt db
+build-tree : {A B : Set} → (A → A → Bool) → (A → A → Bool) → List (A × B) → LookupTree A B
+build-tree eq lt db = build-tree-help (length db) eq lt db
 
 str-lt : String → String → Bool
 str-lt a b = isYes (a <? b)
 
 build-str-tree : {A : Set} → List (String × A) → LookupStrTree A
-build-str-tree db = build_tree str-eq str-lt db
+build-str-tree db = build-tree str-eq str-lt db
 
 build-nat-tree : {A : Set} → List (Nat × A) → LookupNatTree A
-build-nat-tree db = build_tree _==_ _<_ db
+build-nat-tree db = build-tree _==_ _<_ db
 
-read_val : {A B : Set} → A → LookupTree A B → Maybe B
-read_val key (leaf _) = nothing
-read_val key (node lhs v rhs) with ((LTPair.Eq v) key (LTPair.key v))
-read_val key (node lhs v rhs) | true = (just (LTPair.val v))
-read_val key (node lhs v rhs) | false with ((LTPair.Lt v) (LTPair.key v) key)
-read_val key (node lhs v rhs) | false | true = read_val key lhs
-read_val key (node lhs v rhs) | false | false = read_val key rhs
+read-val : {A B : Set} → A → LookupTree A B → Maybe B
+read-val key (leaf _) = nothing
+read-val key (node lhs v rhs) with ((LTPair.Eq v) key (LTPair.key v))
+read-val key (node lhs v rhs) | true = (just (LTPair.val v))
+read-val key (node lhs v rhs) | false with ((LTPair.Lt v) (LTPair.key v) key)
+read-val key (node lhs v rhs) | false | true = read-val key lhs
+read-val key (node lhs v rhs) | false | false = read-val key rhs
 
-has_val : {A B : Set} → A → LookupTree A B → Bool
-has_val key tree with (read_val key tree)
+has-val : {A B : Set} → A → LookupTree A B → Bool
+has-val key tree with (read-val key tree)
 ... | nothing = false
 ... | _ = true
 
-set_val_op : {A B : Set} → (A → A → Bool) → (A → A → Bool) → A → B → LookupTree A B → LookupTree A B
-set_val_op eq lt key nv (leaf _) = node (leaf false) (mk_pair eq lt (key , nv)) (leaf false)
-set_val_op eq lt key nv (node lhs v rhs) with ((LTPair.Eq v) key (LTPair.key v))
-set_val_op eq lt key nv (node lhs v rhs) | true = (node lhs (mk_pair eq lt (key , nv)) rhs)
-set_val_op eq lt key nv (node lhs v rhs) | false with ((LTPair.Lt v) (LTPair.key v) key)
-set_val_op eq lt key nv (node lhs v rhs) | false | true = node (set_val_op eq lt key nv lhs) v rhs
-set_val_op eq lt key nv (node lhs v rhs) | false | false = node lhs v (set_val_op eq lt key nv rhs)
+set-val-op : {A B : Set} → (A → A → Bool) → (A → A → Bool) → A → B → LookupTree A B → LookupTree A B
+set-val-op eq lt key nv (leaf _) = node (leaf false) (mk-pair eq lt (key , nv)) (leaf false)
+set-val-op eq lt key nv (node lhs v rhs) with ((LTPair.Eq v) key (LTPair.key v))
+set-val-op eq lt key nv (node lhs v rhs) | true = (node lhs (mk-pair eq lt (key , nv)) rhs)
+set-val-op eq lt key nv (node lhs v rhs) | false with ((LTPair.Lt v) (LTPair.key v) key)
+set-val-op eq lt key nv (node lhs v rhs) | false | true = node (set-val-op eq lt key nv lhs) v rhs
+set-val-op eq lt key nv (node lhs v rhs) | false | false = node lhs v (set-val-op eq lt key nv rhs)
 
-set_val : {A B : Set} → A → B → LookupTree A B → LookupTree A B
-set_val _ _ (leaf _) = leaf false
-set_val key nv (node lhs v rhs) = set_val_op (LTPair.Eq v) (LTPair.Lt v) key nv (node lhs v rhs)
+set-val : {A B : Set} → A → B → LookupTree A B → LookupTree A B
+set-val _ _ (leaf _) = leaf false
+set-val key nv (node lhs v rhs) = set-val-op (LTPair.Eq v) (LTPair.Lt v) key nv (node lhs v rhs)
 
-all_values : {A B : Set} → LookupTree A B → List B
-all_values (leaf _) = []
-all_values (node lhs v rhs) = (all_values lhs) ++ ((LTPair.val v) ∷ []) ++ (all_values rhs)
+all-values : {A B : Set} → LookupTree A B → List B
+all-values (leaf _) = []
+all-values (node lhs v rhs) = (all-values lhs) ++ ((LTPair.val v) ∷ []) ++ (all-values rhs)
 
 all-kv : {A B : Set} → LookupTree A B → List (A × B)
 all-kv (leaf _) = []
@@ -92,20 +92,20 @@ all-keys : {A B : Set} → LookupTree A B → List A
 all-keys (leaf _) = []
 all-keys (node lhs v rhs) = (all-keys lhs) ++ ((LTPair.key v) ∷ []) ++ (all-keys rhs)
 
-test_read_vala : read_val 3 (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 4)
-test_read_vala = refl
+test_read-vala : read-val 3 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 4)
+test_read-vala = refl
 
-test_read_valb : read_val 5 (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 2)
-test_read_valb = refl
+test_read-valb : read-val 5 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 2)
+test_read-valb = refl
 
-test_has_val : has_val 5 (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ true
-test_has_val = refl
+test_has-val : has-val 5 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ true
+test_has-val = refl
 
-test_has_val_f : has_val 8 (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ false
-test_has_val_f = refl
+test_has-val_f : has-val 8 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ false
+test_has-val_f = refl
 
-test_set_val : set_val 8 1 (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ (8 , 1) ∷ []))
-test_set_val = refl
+test_set-val : set-val 8 1 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ (8 , 1) ∷ []))
+test_set-val = refl
 
-test_all_val : all_values (build_tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ 2 ∷ 7 ∷ 4 ∷ []
-test_all_val = refl
+test_all-val : all-values (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ 2 ∷ 7 ∷ 4 ∷ []
+test_all-val = refl

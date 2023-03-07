@@ -2,7 +2,7 @@
 module d14.deer where
 
 open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; make-perms)
-open import util.lookup using (LookupTree ; build_tree ; has_val ; set_val ; all_values ; LTPair) renaming (read_val to read_tree)
+open import util.lookup using (LookupTree ; build-tree ; has-val ; set-val ; all-values ; LTPair) renaming (read-val to read-tree)
 open import Data.Tree.Binary using (leaf ; node)
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (toList ; fromList ; _++_ ; unlines)
@@ -84,9 +84,9 @@ top-deer-each-s deers (suc x) = concat ((top-deer deers (suc x)) ∷ (top-deer-e
 
 count-occur-h : List String → LookupTree String Nat → LookupTree String Nat
 count-occur-h [] tree = tree
-count-occur-h (x ∷ xs) tree with (read_tree x tree)
-count-occur-h (x ∷ xs) tree | nothing = count-occur-h xs (set_val x 1 tree)
-count-occur-h (x ∷ xs) tree | (just q) = count-occur-h xs (set_val x (suc q) tree)
+count-occur-h (x ∷ xs) tree with (read-tree x tree)
+count-occur-h (x ∷ xs) tree | nothing = count-occur-h xs (set-val x 1 tree)
+count-occur-h (x ∷ xs) tree | (just q) = count-occur-h xs (set-val x (suc q) tree)
 
 str-lt : String → String → Bool
 str-lt a b = isYes (a <? b)
@@ -96,7 +96,7 @@ count-occur [] = leaf false
 count-occur (x ∷ xs) = count-occur-h xs init-tree
   where
     init-tree : LookupTree String Nat
-    init-tree = build_tree _==_ str-lt ((x , 1) ∷ [])
+    init-tree = build-tree _==_ str-lt ((x , 1) ∷ [])
 
 show-tree : LookupTree String Nat → List String
 show-tree (leaf _) = []
