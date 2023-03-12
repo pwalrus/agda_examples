@@ -4,11 +4,12 @@ open import util.list_stuff using (filterᵇ)
 open import Data.Tree.Binary using (Tree ; leaf ; node)
 open import Data.Product using (_×_; _,_)
 open import Agda.Builtin.String using (String)
+open import Data.String.Base using (intersperse)
 open import Data.String.Properties using (_<?_) renaming (_==_ to str-eq)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
 open import Agda.Builtin.Nat using (Nat ; suc ; _<_ ; _==_)
 open import Agda.Builtin.List using (List; _∷_ ; [])
-open import Data.List.Base using (length ; _++_)
+open import Data.List.Base using (length ; _++_ ; concat ; map)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_ ; refl)
 open import Relation.Nullary.Decidable using (isYes)
@@ -92,6 +93,14 @@ all-keys : {A B : Set} → LookupTree A B → List A
 all-keys (leaf _) = []
 all-keys (node lhs v rhs) = (all-keys lhs) ++ ((LTPair.key v) ∷ []) ++ (all-keys rhs)
 
+quick-sort-h : {A : Set} → Nat → (A → A → Bool) → List A → List A
+quick-sort-h 0 _ _ = []
+quick-sort-h _ _ [] = []
+quick-sort-h (suc l) lt (x ∷ xs) = concat ((quick-sort-h l lt (filterᵇ (λ {q → lt q x}) xs)) ∷ (x ∷ []) ∷ (quick-sort-h l lt (filterᵇ (λ {q → lt x q}) xs)) ∷ [])
+
+quick-sort : {A : Set} → (A → A → Bool) → List A → List A
+quick-sort lt inp = quick-sort-h (length inp) lt inp
+
 test_read-vala : read-val 3 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 4)
 test_read-vala = refl
 
@@ -109,3 +118,6 @@ test_set-val = refl
 
 test_all-val : all-values (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ 2 ∷ 7 ∷ 4 ∷ []
 test_all-val = refl
+
+test-quick-sort : quick-sort _<_ (3 ∷ 2 ∷ 5 ∷ 1 ∷ []) ≡ 1 ∷ 2 ∷ 3 ∷ 5 ∷ []
+test-quick-sort = refl
