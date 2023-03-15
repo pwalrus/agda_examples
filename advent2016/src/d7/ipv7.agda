@@ -15,7 +15,7 @@ open import Data.Integer.Base using (_≤ᵇ_) renaming (_+_ to _+z_ ; _-_ to _-
 open import Data.Integer.Properties using (_≟_)
 open import Data.Integer.Show using () renaming (show to showz)
 open import Agda.Builtin.List using (List ; [] ; _∷_)
-open import Data.List using (map ; foldr ; concat ; length ; zip ; take ; head ; last; tail ; any)
+open import Data.List using (map ; foldr ; concat ; length ; zip ; take ; head ; last; tail ; any ; cartesianProductWith)
 open import Agda.Builtin.Char using (Char ; primCharToNat ; primNatToChar)
 open import Data.Char.Properties renaming (_==_ to _==c_ ; _<?_ to _<c_)
 open import Agda.Builtin.Bool using (Bool ; true ; false)
@@ -75,11 +75,40 @@ has-palid-ch _ _ = false
 has-palid : String → Bool
 has-palid x = ((has-palid-ch (suc (length (toList x)))) ∘ toList) x
 
+data ChTrip : Set where
+  chtrip : Char → Char → ChTrip
+
+is-inv : ChTrip → ChTrip → Bool
+is-inv (chtrip a b) (chtrip x y) = (a ==c y) ∧ (b ==c x)
+
+has-inv : List ChTrip → List ChTrip → Bool
+has-inv a b = any (λ {q → q}) (cartesianProductWith is-inv a b)
+
+find-triples-ch : Nat → List Char → List ChTrip
+find-triples-ch 0 _ = []
+find-triples-ch (suc l) (x ∷ y ∷ z ∷ xs) with ((x ==c z) ∧ not (x ==c y))
+find-triples-ch (suc l) (x ∷ y ∷ z ∷ xs) | true = (chtrip x y) ∷ (find-triples-ch l (y ∷ z ∷ xs))
+find-triples-ch (suc l) (x ∷ y ∷ z ∷ xs) | false = (find-triples-ch l (y ∷ z ∷ xs))
+find-triples-ch _ _ = []
+
+find-triples : List String → List ChTrip
+find-triples xs = concat individ
+  where
+    individ : List (List ChTrip)
+    individ = map (λ {x → (find-triples-ch ((suc ∘ length ∘ toList) x) (toList x)) }) xs
+
+
+addr-has-inv : Addr → Bool
+addr-has-inv (addr outs ins) = has-inv (find-triples outs) (find-triples ins)
+
 valid-addr : Addr → Bool
 valid-addr (addr outs ins) = (any has-palid outs) ∧ not (any has-palid ins) 
 
 count-valid-addr : String → String
 count-valid-addr x = "count: " ++ (show ∘ (foldr _+_ 0) ∘ (map (λ {q → if valid-addr q then 1 else 0})) ∘ unmaybe ∘ (map parse-line) ∘ lines) x ++ "\n"
+
+count-ssl-addr : String → String
+count-ssl-addr x = "count: " ++ (show ∘ (foldr _+_ 0) ∘ (map (λ {q → if addr-has-inv q then 1 else 0})) ∘ unmaybe ∘ (map parse-line) ∘ lines) x ++ "\n"
 
 test-parse-line : show-addr (fromMaybe (addr [] []) (parse-line "abba[mnop]qrst")) ≡ "abba[mnop]qrst"
 test-parse-line = refl
@@ -98,3 +127,15 @@ test-valid-addr-c = refl
 
 test-valid-addr-d : valid-addr (fromMaybe (addr [] []) (parse-line "ioxxoj[asdfgh]zxcvbn")) ≡ true
 test-valid-addr-d = refl
+
+test-addr-has-inv-a : addr-has-inv (fromMaybe (addr [] []) (parse-line "aba[bab]xyz")) ≡ true
+test-addr-has-inv-a = refl
+
+test-addr-has-inv-b : addr-has-inv (fromMaybe (addr [] []) (parse-line "xyx[xyx]xyx")) ≡ false
+test-addr-has-inv-b = refl
+
+test-addr-has-inv-c : addr-has-inv (fromMaybe (addr [] []) (parse-line "aaa[kek]eke")) ≡ true
+test-addr-has-inv-c = refl
+
+test-addr-has-inv-d : addr-has-inv (fromMaybe (addr [] []) (parse-line "zazbz[bzb]cdb")) ≡ true
+test-addr-has-inv-d = refl
