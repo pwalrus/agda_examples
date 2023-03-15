@@ -9,7 +9,7 @@ open import Data.String.Properties using (_<?_) renaming (_==_ to str-eq)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
 open import Agda.Builtin.Nat using (Nat ; suc ; _<_ ; _==_)
 open import Agda.Builtin.List using (List; _∷_ ; [])
-open import Data.List.Base using (length ; _++_ ; concat ; map)
+open import Data.List.Base using (length ; _++_ ; concat ; map ; head ; tail)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_ ; refl)
 open import Relation.Nullary.Decidable using (isYes)
@@ -101,6 +101,33 @@ quick-sort-h (suc l) lt (x ∷ xs) = concat ((quick-sort-h l lt (filterᵇ (λ {
 quick-sort : {A : Set} → (A → A → Bool) → List A → List A
 quick-sort lt inp = quick-sort-h (length inp) lt inp
 
+counter-h : {A : Set} → LookupTree A Nat → List A → LookupTree A Nat
+counter-h tree [] = tree
+counter-h tree (x ∷ xs) with (read-val x tree)
+counter-h tree (x ∷ xs) | nothing = counter-h (set-val x 1 tree) xs
+counter-h tree (x ∷ xs) | (just c) = counter-h (set-val x (suc c) tree) xs
+
+pair-orders : {A : Set} → (A → A → Bool) → (A × Nat) → (A × Nat) → Bool
+pair-orders lt (ls , ln) (rs , rn) with (ln < rn)
+pair-orders lt (ls , ln) (rs , rn) | true = false
+pair-orders lt (ls , ln) (rs , rn) | false with (rn < ln)
+pair-orders lt (ls , ln) (rs , rn) | false | true = true
+pair-orders lt (ls , ln) (rs , rn) | false | false = lt ls rs
+
+counter : {A : Set} → (A → A → Bool) → (A → A → Bool) → List A → List (A × Nat)
+counter {A} eq lt lst = quick-sort (pair-orders lt) counts
+  where
+    counts : List (A × Nat)
+    counts with (head lst)
+    counts | (just h) with (tail lst)
+    counts | (just h) | (just t) = all-kv (counter-h (build-tree eq lt ((h , 1) ∷ [])) t)
+    counts | (just h) | _ = []
+    counts | _ = []
+
+
+counter-nat : List Nat → List (Nat × Nat)
+counter-nat = counter _==_ _<_
+
 test_read-vala : read-val 3 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 4)
 test_read-vala = refl
 
@@ -121,3 +148,6 @@ test_all-val = refl
 
 test-quick-sort : quick-sort _<_ (3 ∷ 2 ∷ 5 ∷ 1 ∷ []) ≡ 1 ∷ 2 ∷ 3 ∷ 5 ∷ []
 test-quick-sort = refl
+
+test-counter : counter-nat (1 ∷ 2 ∷ 2 ∷ 3 ∷ []) ≡ (2 , 2) ∷ (1 , 1) ∷ (3 , 1) ∷ []
+test-counter = refl

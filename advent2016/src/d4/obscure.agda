@@ -1,7 +1,7 @@
 module d4.obscure where
 
 open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; each-one ; make-perms ; rem-dot ; append-front-all ; all-replacements ; cartproduct ; min-by-f ; enumerate ; split) renaming (trim to trim-ch)
-open import util.lookup using (LookupStrTree ; LookupNatTree ; build-str-tree ; build-nat-tree ; has-val ; all-values ; all-keys ; all-kv ; LTPair ; str-lt ; quick-sort) renaming (set-val to set-tree ; read-val to read-tree)
+open import util.lookup using (LookupStrTree ; LookupNatTree ; build-str-tree ; build-nat-tree ; has-val ; all-values ; all-keys ; all-kv ; LTPair ; str-lt ; quick-sort ; counter) renaming (set-val to set-tree ; read-val to read-tree)
 open import util.json using (readIntMaybe ; rem-lst-c)
 open import Data.Tree.Binary using (leaf ; node)
 open import Agda.Builtin.String using (String)
@@ -33,24 +33,8 @@ data RoomCode : Set where
 chars-from : RoomCode → List Char
 chars-from (room parts _ _) = concat (map toList parts)
 
-char-count-h : LookupStrTree Nat → List Char → LookupStrTree Nat
-char-count-h tree [] = tree
-char-count-h tree (x ∷ xs) with (read-tree (fromList (x ∷ [])) tree)
-char-count-h tree (x ∷ xs) | nothing = char-count-h (set-tree (fromList (x ∷ [])) 1 tree) xs
-char-count-h tree (x ∷ xs) | (just c) = char-count-h (set-tree (fromList (x ∷ [])) (suc c) tree) xs
-
-pair-orders : (String × Nat) → (String × Nat) → Bool
-pair-orders (ls , ln) (rs , rn) with (ln < rn)
-pair-orders (ls , ln) (rs , rn) | true = false
-pair-orders (ls , ln) (rs , rn) | false with (rn < ln)
-pair-orders (ls , ln) (rs , rn) | false | true = true
-pair-orders (ls , ln) (rs , rn) | false | false = str-lt ls rs
-
 char-count : List Char → List (String × Nat)
-char-count lst = quick-sort pair-orders counts
-  where
-    counts : List (String × Nat)
-    counts = all-kv (char-count-h (build-str-tree (("" , 0) ∷ [])) lst)
+char-count lst = counter _==_ str-lt (map (λ {q → fromList (q ∷ [])}) lst)
 
 checksum-ch : List Char → String
 checksum-ch = fromList ∘ (take 5) ∘ concat ∘ (map toList) ∘ (map proj₁) ∘ char-count
