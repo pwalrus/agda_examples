@@ -2,17 +2,17 @@
 module util.list_stuff where
 
 open import Agda.Builtin.String using (String)
-open import Data.String.Base using (fromList ; toList ; _++_)
+open import Data.String.Base using (fromList ; toList ; _++_ ; unlines ; intersperse)
 open import Data.String.Properties using () renaming (_==_ to _==s_)
 open import Data.Bool.Base using (Bool; true; false; if_then_else_)
 open import Data.Char.Base as Char using (Char)
 open import Data.Char.Properties using (_==_)
-open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip)
+open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip ; head ; tail ; applyUpTo)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
 open import Agda.Builtin.Nat using (_<_)
 open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc)
-open import Data.Nat.Show using (readMaybe)
+open import Data.Nat.Show using (readMaybe ; show)
 open import Function.Base using (_on_; _∘′_; _∘_)
 open import Data.Product using (_×_ ; _,_ ; proj₁)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
@@ -212,6 +212,37 @@ cartproduct [] _ = []
 cartproduct _ [] = []
 cartproduct (x ∷ xs) ys = concat ((map (λ {y → (x , y)}) ys) ∷ (cartproduct xs ys) ∷ [])
 
+head-of-each : {A : Set} → List (List A) → List A
+head-of-each = unmaybe ∘ (map head)
+
+tail-of-each : {A : Set} → List (List A) → List (List A)
+tail-of-each = unmaybe ∘ (map tail)
+
+transpose-h : {A : Set} → ℕ → List (List A) → List (List A)
+transpose-h 0 _ = []
+transpose-h _ [] = []
+transpose-h (suc l) xs with (head-of-each xs)
+transpose-h (suc l) xs | [] = []
+transpose-h (suc l) xs | h with (tail-of-each xs)
+transpose-h (suc l) xs | h | [] = h ∷ []
+transpose-h (suc l) xs | h | t = h ∷ (transpose-h l t)
+
+transpose : {A : Set} → List (List A) → List (List A)
+transpose [] = []
+transpose (x ∷ xs) = transpose-h (suc (length x)) (x ∷ xs)
+
+empty-row : {A : Set} → A → ℕ → List A
+empty-row def size = applyUpTo (λ {_ → def}) size
+
+empty-table : {A : Set} → A → ℕ → ℕ → List (List A) 
+empty-table def h w = applyUpTo (λ {_ → empty-row def w}) h
+
+show-row : {A : Set} → (A → String) → List A → String
+show-row f row = intersperse " " (map f row)
+
+show-table : {A : Set} → (A → String) → List (List A) → String
+show-table f tab = unlines (map (show-row f) tab)
+
 test-trim : (fromList ∘ trim ∘ toList) "    abc d   " ≡ "abc d"
 test-trim = refl
 
@@ -248,3 +279,9 @@ test-enumerate = refl
 
 test-split : split ',' "abc,def,ghi" ≡ "abc" ∷ "def" ∷ "ghi" ∷ []
 test-split = refl
+
+test-show-table : show-table show ((1 ∷ 2 ∷ 3 ∷ []) ∷ (4 ∷ 5 ∷ 6 ∷ []) ∷ []) ≡ "1 2 3\n4 5 6"
+test-show-table = refl
+
+test-transpose : show-table show (transpose ((1 ∷ 2 ∷ 3 ∷ []) ∷ (4 ∷ 5 ∷ 6 ∷ []) ∷ [])) ≡ "1 4\n2 5\n3 6"
+test-transpose = refl

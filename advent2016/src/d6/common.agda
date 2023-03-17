@@ -1,6 +1,6 @@
 module d6.common where
 
-open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; each-one ; make-perms ; rem-dot ; append-front-all ; all-replacements ; cartproduct ; min-by-f ; enumerate ; split) renaming (trim to trim-ch)
+open import util.list_stuff using (words ; lines ; unmaybe ; filterᵇ ; each-one ; make-perms ; rem-dot ; append-front-all ; all-replacements ; cartproduct ; min-by-f ; enumerate ; split ; head-of-each ; tail-of-each) renaming (trim to trim-ch)
 open import util.lookup using (LookupStrTree ; LookupNatTree ; build-str-tree ; build-nat-tree ; has-val ; all-values ; all-keys ; all-kv ; LTPair ; str-lt ; quick-sort ; counter) renaming (set-val to set-tree ; read-val to read-tree)
 open import util.json using (readIntMaybe ; rem-lst-c)
 open import Data.Tree.Binary using (leaf ; node)
@@ -25,13 +25,6 @@ open import Function.Base using (_∘_)
 open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
 open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Relation.Nullary.Decidable using (isYes)
-
-
-head-of-each : {A : Set} → List (List A) → List A
-head-of-each = unmaybe ∘ (map head)
-
-tail-of-each : {A : Set} → List (List A) → List (List A)
-tail-of-each = unmaybe ∘ (map tail)
 
 final-of : {A : Set} → List A → Maybe A
 final-of [] = nothing
