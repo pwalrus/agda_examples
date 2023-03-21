@@ -27,10 +27,19 @@ open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
 open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Relation.Nullary.Decidable using (isYes)
 
+output_offs : Nat
+output_offs = 100000
 
 data BotId : Set where
   bot : Nat → BotId
   output : Nat → BotId
+
+use-id : BotId → Nat
+use-id (bot id) = id
+use-id (output id) = output_offs + id
+
+mk-id : Nat → BotId
+mk-id x = if suc x < output_offs then (bot x) else (output (x - output_offs))
 
 eq-bot : BotId → BotId → Bool
 eq-bot (bot x) (bot y) = x ==n y
@@ -46,20 +55,26 @@ eq-inst (give-val x a) (give-val y b) = (eq-bot x y) ∧ (a ==n b)
 eq-inst (comp-vals i1 i2 i3) (comp-vals j1 j2 j3) = (eq-bot i1 j1) ∧ (eq-bot i2 j2) ∧ (eq-bot i3 j3)
 eq-inst _ _ = false
 
+state-to-inst : Nat × List Nat → List BotInst
+state-to-inst (x , xs) = map (λ{q → give-val (mk-id x) q}) xs
+
 show-id : BotId → String
 show-id (bot id) = "bot " ++ show id
 show-id (output id) = "output " ++ show id
 
 show-inst : BotInst → String
-show-inst (give-val bid v) = "give " ++ show v ++ " to " ++ show-id bid
-show-inst (comp-vals i1 i2 i3) = "comp " ++ show-id i1 ++ " " ++ show-id i2 ++ " " ++ show-id i3
+show-inst (give-val bid v) = "value " ++ show v ++ " goes to " ++ show-id bid
+show-inst (comp-vals i1 i2 i3) = show-id i1 ++ " gives low to " ++ show-id i2 ++ " and high to " ++ show-id i3
+
+show-state : LookupNatTree (List Nat) × List BotInst → String
+show-state (db , prog) = (unlines ∘ concat) (((map show-inst) ∘ concat) (map state-to-inst (all-kv db)) ∷ (map show-inst prog) ∷ [])
 
 is-init : BotInst → Bool
 is-init (give-val _ _) = true
 is-init _ = false
 
 same-init : BotInst → BotInst → Bool
-same-init (give-val (bot x) _) (give-val (bot y) _) = x ==n y
+same-init (give-val x _) (give-val y _) = eq-bot x y
 same-init _ _ = false
 
 parse-bot-id : String → Nat → Maybe BotId
@@ -89,9 +104,11 @@ parse-comp-vals id t1 id1 t2 id2 | (just b1) | nothing = nothing
 parse-comp-vals id t1 id1 t2 id2 | nothing = nothing
 
 parse-line-w : List String → Maybe BotInst
-parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ "bot" ∷ idm ∷ _) with (read-maybe-2 vm idm)
-parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ "bot" ∷ idm ∷ _) | (just (v , id)) = just (give-val (bot id) v)
-parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ "bot" ∷ idm ∷ _) | _ = nothing
+parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ t1 ∷ idm ∷ _) with (read-maybe-2 vm idm)
+parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ t1 ∷ idm ∷ _) | (just (v , id)) with (parse-bot-id t1 id)
+parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ t1 ∷ idm ∷ _) | (just (v , id)) | (just b1) = just (give-val b1 v)
+parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ t1 ∷ idm ∷ _) | (just (v , id)) | nothing = nothing
+parse-line-w ("value" ∷ vm ∷ "goes" ∷ "to" ∷ t1 ∷ idm ∷ _) | _ = nothing
 parse-line-w ("bot" ∷ idm ∷ "gives" ∷ "low" ∷ "to" ∷ t1 ∷ id1m ∷ "and" ∷ "high" ∷ "to" ∷ t2 ∷ id2m ∷ _) with (read-maybe-3 idm id1m id2m)
 parse-line-w ("bot" ∷ idm ∷ "gives" ∷ "low" ∷ "to" ∷ t1 ∷ id1m ∷ "and" ∷ "high" ∷ "to" ∷ t2 ∷ id2m ∷ _) | (just (id , id1 , id2)) = parse-comp-vals id t1 id1 t2 id2
 parse-line-w ("bot" ∷ idm ∷ "gives" ∷ "low" ∷ "to" ∷ t1 ∷ id1m ∷ "and" ∷ "high" ∷ "to" ∷ t2 ∷ id2m ∷ _) | nothing = nothing
@@ -101,7 +118,7 @@ parse-line : String → Maybe BotInst
 parse-line = parse-line-w ∘ words
 
 collapse-init-eq-class : List BotInst → (Nat × List Nat)
-collapse-init-eq-class ((give-val (bot id) v) ∷ xs) = id , (v ∷ proj₂ (collapse-init-eq-class xs))
+collapse-init-eq-class ((give-val b1 v) ∷ xs) = (use-id b1) , (v ∷ proj₂ (collapse-init-eq-class xs))
 collapse-init-eq-class _ = 0 , []
 
 init-tree : List BotInst → LookupNatTree (List Nat)
@@ -113,10 +130,6 @@ init-tree xs = build-nat-tree pairs
     classes = eq-classes same-init init-only
     pairs : List (Nat × List Nat)
     pairs = map collapse-init-eq-class classes
-
-use-id : BotId → Nat
-use-id (bot id) = id
-use-id (output id) = 100000 + id
 
 curr-inv : Nat → LookupNatTree (List Nat) → List Nat
 curr-inv id db with (read-tree id db)
@@ -189,33 +202,49 @@ first-match f (x ∷ xs) | false with (first-match f xs)
 first-match f (x ∷ xs) | false | nothing = nothing
 first-match f (x ∷ xs) | false | just (y , ys) = just (y , x ∷ ys)
 
-apply-all-inst : Nat → List BotInst → LookupNatTree (List Nat) → LookupNatTree (List Nat)
-apply-all-inst 0 _ db = db
+apply-all-inst : Nat → List BotInst → LookupNatTree (List Nat) → (LookupNatTree (List Nat) × List BotInst)
+apply-all-inst 0 prog db = db , prog
 apply-all-inst (suc lm) prog db = next
   where
-    next : LookupNatTree (List Nat)
+    next : LookupNatTree (List Nat) × List BotInst
     next with (done prog db)
-    next | true = db
+    next | true = (db , prog)
     next | false with (partitionᵇ (λ {q → valid-inst q db}) prog)
-    next | false | ([] , _) = db
+    next | false | ([] , rem) = db , rem
     next | false | (valid , rem) = (apply-all-inst lm rem (foldr apply-inst db valid))
 
 calc-final-state : String → String
-calc-final-state x = show-tree (apply-all-inst (length prog) (filterᵇ (not ∘ is-init) prog) db) ++ "\n"
+calc-final-state x = show-tree (proj₁ (apply-all-inst (length prog) (filterᵇ (not ∘ is-init) prog) db)) ++ "\n"
   where
     prog : List BotInst
     prog = (unmaybe ∘ (map parse-line) ∘ lines) x
     db : LookupNatTree (List Nat)
     db = init-tree prog
 
-test-parse-line-a : parse-line "value 5 goes to bot 2" ≡ just (give-val (bot 2) 5)
+calc-one-step : String → String
+calc-one-step x = show-state (apply-all-inst 1 (filterᵇ (not ∘ is-init) prog) db) ++ "\n"
+  where
+    prog : List BotInst
+    prog = (unmaybe ∘ (map parse-line) ∘ lines) x
+    db : LookupNatTree (List Nat)
+    db = init-tree prog
+
+test-parse-line-a : show-inst (fromMaybe (give-val (bot 0) 0) (parse-line "value 5 goes to bot 2")) ≡ "value 5 goes to bot 2"
 test-parse-line-a = refl
 
 test-parse-line-b : parse-line "bot 2 gives low to bot 1 and high to bot 0" ≡ just (comp-vals (bot 2) (bot 1) (bot 0))
 test-parse-line-b = refl
 
-test-parse-line-c : parse-line "bot 0 gives low to output 2 and high to output 0" ≡ just (comp-vals (bot 0) (output 2) (output 0))
+test-parse-line-c : show-inst (fromMaybe (give-val (bot 0) 0) (parse-line "bot 0 gives low to output 2 and high to output 0")) ≡ "bot 0 gives low to output 2 and high to output 0"
 test-parse-line-c = refl
+
+test-parse-line-d : show-inst (fromMaybe (give-val (bot 0) 0) (parse-line "value 3 goes to output 19")) ≡ "value 3 goes to output 19"
+test-parse-line-d = refl
+
+test-init-tree : (show-tree ∘ init-tree ∘ unmaybe ∘ (map parse-line) ∘ lines)
+  ("value 11 goes to output 19\n" ++ "value 5 goes to bot 2\n")
+  ≡ "2:[5]\n100019:[11]"
+test-init-tree = refl
 
 test-apply-all : calc-final-state
   ("value 5 goes to bot 2\n" ++
