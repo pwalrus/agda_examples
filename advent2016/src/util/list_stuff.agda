@@ -14,7 +14,7 @@ open import Agda.Builtin.Nat using (_<_)
 open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc)
 open import Data.Nat.Show using (readMaybe ; show)
 open import Function.Base using (_on_; _∘′_; _∘_)
-open import Data.Product using (_×_ ; _,_ ; proj₁)
+open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂ ; map₁ ; map₂)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
 
 add-front-list : {A : Set} → List (List A) → A → List (List A)
@@ -243,6 +243,30 @@ show-row f row = intersperse " " (map f row)
 show-table : {A : Set} → (A → String) → List (List A) → String
 show-table f tab = unlines (map (show-row f) tab)
 
+map₂′ : {A B C : Set} → (B → C) → A × B → A × C
+map₂′ f = map₂ f
+
+partitionᵇ : {A : Set} → (A → Bool) → List A → List A × List A
+partitionᵇ p []       = ([] , [])
+partitionᵇ p (x ∷ xs) = (if p x then map₁ else map₂′) (x ∷_) (partitionᵇ p xs)
+
+eq-classes-h : {A : Set} → ℕ → (A → A → Bool) → List A → List (List A)
+eq-classes-h {A} 0 _ _ = []
+eq-classes-h {A} (suc lm) f [] = []
+eq-classes-h {A} (suc lm) f (x ∷ xs) = (proj₁ fst-div) ∷ (eq-classes-h lm f (proj₂ fst-div))
+  where
+    fst-div : List A × List A
+    fst-div = partitionᵇ (f x) (x ∷ xs)
+
+eq-classes : {A : Set} → (A → A → Bool) → List A → List (List A)
+eq-classes f xs = eq-classes-h (length xs) f xs
+
+rem-match : {A : Set} → (A → Bool) → List A → List A
+rem-match f [] = []
+rem-match f (x ∷ xs) with (f x)
+rem-match f (x ∷ xs) | true = rem-match f xs
+rem-match f (x ∷ xs) | false = x ∷ (rem-match f xs)
+
 test-trim : (fromList ∘ trim ∘ toList) "    abc d   " ≡ "abc d"
 test-trim = refl
 
@@ -285,3 +309,9 @@ test-show-table = refl
 
 test-transpose : show-table show (transpose ((1 ∷ 2 ∷ 3 ∷ []) ∷ (4 ∷ 5 ∷ 6 ∷ []) ∷ [])) ≡ "1 4\n2 5\n3 6"
 test-transpose = refl
+
+test-eq-classes : eq-classes _==_ ('a' ∷ 'a' ∷ 'c' ∷ 'b' ∷ 'c' ∷ []) ≡ (('a' ∷ 'a' ∷ []) ∷ ('c' ∷ 'c' ∷ []) ∷ ('b' ∷ []) ∷ [])
+test-eq-classes = refl
+
+test-rem-match : rem-match (λ {q → q == 'c'}) ('a' ∷ 'b' ∷ 'c' ∷ 'd' ∷ []) ≡ ('a' ∷ 'b' ∷ 'd' ∷ [])
+test-rem-match = refl
