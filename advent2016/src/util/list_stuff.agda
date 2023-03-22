@@ -4,7 +4,7 @@ module util.list_stuff where
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (fromList ; toList ; _++_ ; unlines ; intersperse)
 open import Data.String.Properties using () renaming (_==_ to _==s_)
-open import Data.Bool.Base using (Bool; true; false; if_then_else_)
+open import Data.Bool.Base using (Bool; true; false; if_then_else_ ; not)
 open import Data.Char.Base as Char using (Char)
 open import Data.Char.Properties using (_==_)
 open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip ; head ; tail ; applyUpTo)
@@ -157,6 +157,18 @@ filterᵇ : {A : Set} → (A → Bool) → List A → List A
 filterᵇ p []       = []
 filterᵇ p (x ∷ xs) = if p x then x ∷ filterᵇ p xs else filterᵇ p xs
 
+deduplicateᵇ : {A : Set} → (A → A → Bool) → List A → List A
+deduplicateᵇ r [] = []
+deduplicateᵇ r (x ∷ xs) = x ∷ filterᵇ (not ∘ r x) (deduplicateᵇ r xs)
+
+
+index-of-h : {A : Set} → ℕ → (A → A → Bool) → List A → A → Maybe ℕ
+index-of-h _ _ [] _ = nothing
+index-of-h idx eq (x ∷ xs) k = if (eq x k) then (just idx) else index-of-h (suc idx) eq xs k
+
+index-of : {A : Set} → (A → A → Bool) → List A → A → Maybe ℕ
+index-of eq xs k = index-of-h 0 eq xs k
+
 parse-nat : String → ℕ
 parse-nat x = def-zero (readMaybe 10 x)
   where
@@ -206,6 +218,13 @@ unmaybe : {A : Set} → List (Maybe A) → List A
 unmaybe [] = []
 unmaybe ((just x) ∷ xs) = x ∷ (unmaybe xs)
 unmaybe (nothing ∷ xs) = unmaybe xs
+
+hard-unmaybe : {A : Set} → List (Maybe A) → Maybe (List A)
+hard-unmaybe [] = just []
+hard-unmaybe ((just x) ∷ xs) with (hard-unmaybe xs)
+hard-unmaybe ((just x) ∷ xs) | (just ys) = just (x ∷ ys)
+hard-unmaybe ((just x) ∷ xs) | nothing = nothing
+hard-unmaybe (nothing ∷ xs) = nothing
 
 cartproduct : {A B : Set} → List A → List B → List (A × B)
 cartproduct [] _ = []
