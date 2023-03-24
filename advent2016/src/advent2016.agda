@@ -14,11 +14,13 @@ open import d8.rect using (count-lights-on)
 open import d9.compress using (find-f-decom-size)
 open import d10.bots using (calc-one-step)
 open import d11.rtg using (show-minimal-moves)
+open import d12.asm using (show-final-state)
+open import d13.maze using (find-shortest-maze)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact show-minimal-moves
+main = interact find-shortest-maze
 

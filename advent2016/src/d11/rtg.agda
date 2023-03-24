@@ -297,7 +297,7 @@ show-minimal-moves x = output ++ "\n"
     init-state : EqState
     init-state = parse-batch x
     final-state : Maybe EqState
-    final-state = search-rec-breadth-dedup 10000000 show-anon-state2 at-top-floor (valid-next-states 2000) (init-state ∷ [])
+    final-state = proj₁ (search-rec-breadth-dedup 10000000 show-anon-state2 at-top-floor (valid-next-states 2000) (init-state ∷ []))
     output : String
     output with final-state
     output | nothing = "no path found"

@@ -2,7 +2,7 @@
 module util.search where
 
 open import util.list_stuff using (filterᵇ)
-open import util.lookup using (LookupStrTree ; build-str-tree ; has-val ; set-val)
+open import util.lookup using (LookupStrTree ; build-str-tree ; has-val ; set-val ; all-kv)
 open import Agda.Builtin.List using (List ; _∷_ ; [])
 open import Data.List using (concat ; foldr ; cartesianProductWith ; map)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
@@ -10,7 +10,9 @@ open import Agda.Builtin.Nat using (Nat ; suc ; _+_ ; _<_ ; _==_)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Agda.Builtin.String using (String)
-open import Data.Product using (_×_ ; _,_)
+open import Data.String using (intersperse)
+open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
+open import Function.Base using (_∘_)
 
 search-rec-depth : {A : Set} → Nat → (A → Bool) → (A → List A) → List A → Maybe (A)
 search-rec-depth 0 _ _ _ = nothing
@@ -32,19 +34,19 @@ search-rec-breadth (suc lm) done-cond mk-child currents | (current ∷ rest) | f
 search-rec-breadth (suc lm) done-cond mk-child currents | (current ∷ rest) | false | deeper = search-rec-breadth lm done-cond mk-child (concat (rest ∷ deeper ∷ []))
 
 
-search-rec-breadth-dedup-h : {A : Set} → Nat → (A → String) → LookupStrTree Bool → (A → Bool) → (A → List A) → List A → Maybe (A)
-search-rec-breadth-dedup-h 0 _ _ _ _ _ = nothing
+search-rec-breadth-dedup-h : {A : Set} → Nat → (A → String) → LookupStrTree Bool → (A → Bool) → (A → List A) → List A → (Maybe (A) × LookupStrTree Bool)
+search-rec-breadth-dedup-h 0 _ known _ _ _ = nothing , known
 search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents with (currents)
-search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | [] = nothing
+search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | [] = nothing , known
 search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) with (done-cond current)
-search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) | true = just current
+search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) | true = just current , known
 search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) | false with (has-val (dedup current) known)
 search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) | false | false with (mk-child current)
 search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) | false | false | deeper = search-rec-breadth-dedup-h lm dedup (set-val (dedup current) true known) done-cond mk-child (concat (rest ∷ deeper ∷ []))
 search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (current ∷ rest) | false | true = search-rec-breadth-dedup-h lm dedup known done-cond mk-child rest
 
 
-search-rec-breadth-dedup : {A : Set} → Nat → (A → String) → (A → Bool) → (A → List A) → List A → Maybe (A)
+search-rec-breadth-dedup : {A : Set} → Nat → (A → String) → (A → Bool) → (A → List A) → List A → Maybe (A) × LookupStrTree Bool
 search-rec-breadth-dedup lm dedup done-cond mk-child currents = search-rec-breadth-dedup-h lm dedup (build-str-tree (("" , false) ∷ [])) done-cond mk-child currents
 
 private
@@ -81,6 +83,16 @@ private
   next-steps [] = ("A" ∷ []) ∷ []
   next-steps (x ∷ xs) = map (λ {q → q ∷ x ∷ xs}) (sample-graph x)
 
+  show-loc : List String → String
+  show-loc [] = "[]"
+  show-loc (x ∷ _) = x
 
 test-find-shortest : search-rec-breadth 10 graph-end next-steps ([] ∷ []) ≡ just ("E" ∷ "C" ∷ "A" ∷ [])
 test-find-shortest = refl
+
+
+test-find-shortest-dedup-l : proj₁ (search-rec-breadth-dedup 10 show-loc graph-end next-steps ([] ∷ [])) ≡ just ("E" ∷ "C" ∷ "A" ∷ [])
+test-find-shortest-dedup-l = refl
+
+test-find-shortest-dedup-r : (intersperse "," ∘ map proj₁ ∘ all-kv ∘ proj₂) (search-rec-breadth-dedup 10 show-loc graph-end next-steps ([] ∷ [])) ≡ "[],D,C,B,A,"
+test-find-shortest-dedup-r = refl
