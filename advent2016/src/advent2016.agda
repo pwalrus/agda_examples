@@ -16,11 +16,15 @@ open import d10.bots using (calc-one-step)
 open import d11.rtg using (show-minimal-moves)
 open import d12.asm using (show-final-state)
 open import d13.maze using (find-shortest-maze)
+open import d14.otpad using (find-otp-index)
+open import d15.discs using (perfect-align)
+open import d16.dragon using (correct-checksum)
+open import d17.maze using (iter-over-maze-longest)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact find-shortest-maze
+main = interact iter-over-maze-longest
 

@@ -33,6 +33,16 @@ search-rec-breadth (suc lm) done-cond mk-child currents | (current ∷ rest) | t
 search-rec-breadth (suc lm) done-cond mk-child currents | (current ∷ rest) | false with (mk-child current)
 search-rec-breadth (suc lm) done-cond mk-child currents | (current ∷ rest) | false | deeper = search-rec-breadth lm done-cond mk-child (concat (rest ∷ deeper ∷ []))
 
+search-rec-all : {A : Set} → Nat → (A → Bool) → (A → List A) → List A → List A
+search-rec-all 0 _ _ _ = []
+search-rec-all (suc lm) done-cond mk-child currents with (currents)
+search-rec-all (suc lm) done-cond mk-child currents | [] = []
+search-rec-all (suc lm) done-cond mk-child currents | (current ∷ rest) with (done-cond current)
+search-rec-all (suc lm) done-cond mk-child currents | (current ∷ rest) | true with (mk-child current)
+search-rec-all (suc lm) done-cond mk-child currents | (current ∷ rest) | true | deeper = current ∷ (search-rec-all lm done-cond mk-child (concat (rest ∷ [])))
+search-rec-all (suc lm) done-cond mk-child currents | (current ∷ rest) | false with (mk-child current)
+search-rec-all (suc lm) done-cond mk-child currents | (current ∷ rest) | false | deeper = search-rec-all lm done-cond mk-child (concat (rest ∷ deeper ∷ []))
+
 
 search-rec-breadth-dedup-h : {A : Set} → Nat → (A → String) → LookupStrTree Bool → (A → Bool) → (A → List A) → List A → (Maybe (A) × LookupStrTree Bool)
 search-rec-breadth-dedup-h 0 _ known _ _ _ = nothing , known
@@ -96,3 +106,8 @@ test-find-shortest-dedup-l = refl
 
 test-find-shortest-dedup-r : (intersperse "," ∘ map proj₁ ∘ all-kv ∘ proj₂) (search-rec-breadth-dedup 10 show-loc graph-end next-steps ([] ∷ [])) ≡ "[],D,C,B,A,"
 test-find-shortest-dedup-r = refl
+
+test-find-all : search-rec-all 100 graph-end next-steps ([] ∷ []) ≡ ("E" ∷ "C" ∷ "A" ∷ []) ∷ ("E" ∷ "D" ∷ "B" ∷ "A" ∷ []) ∷ []
+test-find-all = refl
+
+
