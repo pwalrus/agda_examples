@@ -20,11 +20,13 @@ open import d14.otpad using (find-otp-index)
 open import d15.discs using (perfect-align)
 open import d16.dragon using (correct-checksum)
 open import d17.maze using (iter-over-maze-longest)
+open import d18.rogue using (show-safe-tile-count)
+open import d19.elephant using (find-final-elf)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact iter-over-maze-longest
+main = interact find-rot-sit-all
 
