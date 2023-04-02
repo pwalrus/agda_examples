@@ -22,11 +22,13 @@ open import d16.dragon using (correct-checksum)
 open import d17.maze using (iter-over-maze-longest)
 open import d18.rogue using (show-safe-tile-count)
 open import d19.elephant using (find-final-elf)
+open import d20.range using (find-allowed-ip ; count-allowed-ip)
+open import d21.scramble using (scramble-word ; unscramble-word)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact find-rot-sit-all
+main = interact unscramble-word
 

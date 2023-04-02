@@ -97,6 +97,17 @@ rot-pos c xs = rot-right ((if 3 < idx then 1 else 0) + 1 + idx) xs
     idx : Nat
     idx = idx-of c xs
 
+rot-pos-rev : Char → String → String
+rot-pos-rev c xs = rot-left rotby xs
+  where
+    idx : Nat
+    idx = idx-of c xs
+    rotby : Nat
+    rotby with ((idx ==n 0) ∨ (mod-nat idx 2 ==n 1))
+    rotby | true = 1 + (div-nat idx 2)
+    rotby | false = mod-nat (5 + (div-nat idx 2)) (length (toList xs))
+    
+
 rev-pos : Nat → Nat → String → String
 rev-pos x y xs = (fromList ∘ concat) (fst-part ∷ (reverse snd-part) ∷ trd-part ∷ [])
   where
@@ -120,6 +131,7 @@ data Inst : Set where
   rotl : Nat → Inst
   rotr : Nat → Inst
   rotpos : Char → Inst
+  rotposrev : Char → Inst
   revpos : Nat → Nat → Inst
   mvpos : Nat → Nat → Inst
 
@@ -155,15 +167,27 @@ apply-inst (swappos x y) xs = swap-idx x y xs
 apply-inst (swapch a b) xs = swap-ch a b xs
 apply-inst (rotl x) xs = rot-left x xs
 apply-inst (rotr x) xs = rot-right x xs
-apply-inst (rotpos x) xs = rot-pos x xs 
+apply-inst (rotpos x) xs = rot-pos x xs
+apply-inst (rotposrev x) xs = rot-pos-rev x xs 
 apply-inst (revpos x y) xs = rev-pos x y xs
 apply-inst (mvpos x y) xs = mv-pos x y xs
 
 apply-all-inst : List Inst → String → String
 apply-all-inst xs init = foldr apply-inst init (reverse xs)
 
+rev-inst : Inst → Inst
+rev-inst (rotl x) = (rotr x)
+rev-inst (rotr x) = (rotl x)
+rev-inst (rotpos c) = rotposrev c
+rev-inst (rotposrev c) = rotpos c
+rev-inst (mvpos x y) = mvpos y x
+rev-inst ins = ins
+
 scramble-word : String → String
 scramble-word x = "final: " ++ (apply-all-inst (parse-batch x) "abcdefgh") ++ "\n"
+
+unscramble-word : String → String
+unscramble-word x = "final: " ++ (apply-all-inst ((map rev-inst ∘ reverse ∘ parse-batch) x) "fbgdceah") ++ "\n"
 
 test-rot-left : rot-left 2 "abcdef" ≡ "cdefab"
 test-rot-left = refl
@@ -192,6 +216,9 @@ test-rev-pos-b = refl
 test-mv-pos : mv-pos 3 0 "bdeac" ≡ "abdec"
 test-mv-pos = refl
 
+test-rotate-rev-a : rot-pos-rev 'a' (rot-pos 'a' "abcdefgh") ≡ "abcdefgh"
+test-rotate-rev-a = refl
+
 test-parse-line-a : parse-line "rotate left 1 step" ≡ just (rotl 1)
 test-parse-line-a = refl
 
@@ -208,6 +235,20 @@ test-apply-all : apply-all-inst (parse-batch
   "move position 3 to position 0\n" ++
   "rotate based on position of letter b\n" ++
   "rotate based on position of letter d"
-  )) "abcde"
+  ))
+  "abcde"
   ≡ "decab"
 test-apply-all = refl
+
+--test-unscramble : (apply-all-inst ((map rev-inst ∘ reverse ∘ parse-batch)
+--  ("swap position 4 with position 0\n" ++
+--  "swap letter d with letter b\n" ++
+--  "reverse positions 0 through 4\n" ++
+--  "rotate left 1 step\n" ++
+--  "move position 1 to position 4\n" ++
+--  "move position 3 to position 0\n" ++
+--  "rotate based on position of letter b\n" ++
+--  "rotate based on position of letter d"
+--  ))
+--  "fbdecgha") ≡ "abcdefgh"
+--test-unscramble = refl
