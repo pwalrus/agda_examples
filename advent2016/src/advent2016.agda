@@ -24,11 +24,12 @@ open import d18.rogue using (show-safe-tile-count)
 open import d19.elephant using (find-final-elf)
 open import d20.range using (find-allowed-ip ; count-allowed-ip)
 open import d21.scramble using (scramble-word ; unscramble-word)
+open import d22.df using (count-viable ; find-data-moves)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact unscramble-word
+main = interact find-data-moves
 
