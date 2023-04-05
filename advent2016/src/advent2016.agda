@@ -25,11 +25,12 @@ open import d19.elephant using (find-final-elf)
 open import d20.range using (find-allowed-ip ; count-allowed-ip)
 open import d21.scramble using (scramble-word ; unscramble-word)
 open import d22.df using (count-viable ; find-data-moves)
+open import d23.asm using (show-tgl-state)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact find-data-moves
+main = interact show-tgl-state
 
