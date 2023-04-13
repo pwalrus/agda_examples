@@ -4,15 +4,16 @@ module util.search where
 open import util.list_stuff using (filterᵇ)
 open import util.lookup using (LookupStrTree ; build-str-tree ; has-val ; set-val ; all-kv)
 open import Agda.Builtin.List using (List ; _∷_ ; [])
-open import Data.List using (concat ; foldr ; cartesianProductWith ; map)
+open import Data.List using (concat ; foldr ; cartesianProductWith ; map ; length ; applyUpTo)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
-open import Agda.Builtin.Nat using (Nat ; suc ; _+_ ; _<_ ; _==_)
+open import Data.Bool using (if_then_else_ ; not ; _∧_)
+open import Agda.Builtin.Nat using (Nat ; suc ; _+_ ; _-_ ; _<_ ; _==_)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Agda.Builtin.String using (String)
 open import Data.String using (intersperse)
 open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
-open import Function.Base using (_∘_)
+open import Function using (_∘_ ; id)
 
 search-rec-depth : {A : Set} → Nat → (A → Bool) → (A → List A) → List A → Maybe (A)
 search-rec-depth 0 _ _ _ = nothing
@@ -58,6 +59,34 @@ search-rec-breadth-dedup-h (suc lm) dedup known done-cond mk-child currents | (c
 
 search-rec-breadth-dedup : {A : Set} → Nat → (A → String) → (A → Bool) → (A → List A) → List A → Maybe (A) × LookupStrTree Bool
 search-rec-breadth-dedup lm dedup done-cond mk-child currents = search-rec-breadth-dedup-h lm dedup (build-str-tree (("" , false) ∷ [])) done-cond mk-child currents
+
+private
+  best-pair : {A : Set} → (Nat × A) → (Nat × A) → (Nat × A)
+  best-pair (n1 , x1) (n2 , x2) = if n2 < n1 then (n2 , x2) else (n1 , x1)
+
+  new-best : {A : Set} → (Nat × A) → List A → (A → Bool) → (A → Nat) → (Nat × A)
+  new-best {A} best cand done-func qual-func = pair
+    where
+      complete : List (Nat × A)
+      complete = (map (λ {q → qual-func q , q}) ∘ filterᵇ done-func) cand
+      pair : (Nat × A)
+      pair = foldr best-pair best complete
+
+  is-valid : {A : Set} → (Nat × A) → (A → Bool) → (A → Nat) → A → Bool
+  is-valid (bn , _) done-cond qual-func x = (not (done-cond x)) ∧ (qual-func x < bn)
+
+branch-bound : {A : Set} → Nat → (Nat × A) → (A → Bool) → (A → Nat) → (A → List A) → List A → Maybe (Nat × A)
+branch-bound {A} 0 _ _ _ _ _ = nothing
+branch-bound {A} (suc lm) best done-cond qual-func mk-child [] = just best
+branch-bound {A} (suc lm) best done-cond qual-func mk-child (x ∷ stack) = branch-bound lm new-b-pair done-cond qual-func mk-child new-stack
+  where
+    next-layer : List A
+    next-layer = mk-child x
+    new-b-pair : Nat × A
+    new-b-pair = new-best best next-layer done-cond qual-func
+    new-stack : List A
+    new-stack = concat ((filterᵇ (is-valid new-b-pair done-cond qual-func) next-layer) ∷ stack ∷ [])
+
 
 private
   add-coin : List Nat → List (List Nat)
@@ -111,3 +140,29 @@ test-find-all : search-rec-all 100 graph-end next-steps ([] ∷ []) ≡ ("E" ∷
 test-find-all = refl
 
 
+private
+  eval-perm : List Nat → Nat
+  eval-perm [] = 0
+  eval-perm (x ∷ []) = 0
+  eval-perm (x ∷ y ∷ xs) = (y - x) + eval-perm (y ∷ xs)
+
+  done-perm : List Nat → Bool
+  done-perm xs = length xs == 4
+
+  is-in : List Nat → Nat → Bool
+  is-in [] _ = false
+  is-in (x ∷ xs) y with (x == y)
+  is-in (x ∷ xs) y | true = true
+  is-in (x ∷ xs) y | false = is-in xs y
+
+  list-minus : List Nat → List Nat → List Nat
+  list-minus xs ys = filterᵇ (not ∘ (is-in ys)) xs
+
+  mk-perms : List Nat → List (List Nat)
+  mk-perms xs = map (λ {q → q ∷ xs}) remaining
+    where
+      remaining : List Nat
+      remaining = list-minus (applyUpTo id 4) xs
+
+test-branch-bound : branch-bound 1000 (4 , 0 ∷ 1 ∷ 2 ∷ 3 ∷ []) done-perm eval-perm mk-perms ([] ∷ []) ≡ just (0 , 3 ∷ 2 ∷ 1 ∷ 0 ∷ [])
+test-branch-bound = refl

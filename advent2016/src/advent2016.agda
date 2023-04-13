@@ -26,11 +26,12 @@ open import d20.range using (find-allowed-ip ; count-allowed-ip)
 open import d21.scramble using (scramble-word ; unscramble-word)
 open import d22.df using (count-viable ; find-data-moves)
 open import d23.asm using (show-tgl-state)
+open import d24.duct using (find-shortest-path)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact show-tgl-state
+main = interact find-shortest-path
 

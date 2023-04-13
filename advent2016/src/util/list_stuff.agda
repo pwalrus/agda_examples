@@ -150,12 +150,22 @@ make-perms-h (suc l) inp | pairs = concat (map
 make-perms : {A : Set} → List A → List (List A)
 make-perms inp = make-perms-h (suc (length inp)) inp
 
+is-in : {A : Set} → (A → A → Bool) → List A → A → Bool
+is-in _ [] _ = false
+is-in eq (x ∷ xs) y with (eq x y)
+is-in eq (x ∷ xs) y | true = true
+is-in eq (x ∷ xs) y | false = is-in eq xs y
+
+
 -- Almost completed copied from std-lib. Its in the online version, but not the installed version?
 
 
 filterᵇ : {A : Set} → (A → Bool) → List A → List A
 filterᵇ p []       = []
 filterᵇ p (x ∷ xs) = if p x then x ∷ filterᵇ p xs else filterᵇ p xs
+
+list-minus : {A : Set} → (A → A → Bool) → List A → List A → List A
+list-minus eq xs ys = filterᵇ (not ∘ (is-in eq ys)) xs
 
 deduplicateᵇ : {A : Set} → (A → A → Bool) → List A → List A
 deduplicateᵇ r [] = []
