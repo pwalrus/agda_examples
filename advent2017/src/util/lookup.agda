@@ -7,6 +7,7 @@ open import Agda.Builtin.String using (String)
 open import Data.String.Base using (intersperse)
 open import Data.String.Properties using (_<?_) renaming (_==_ to str-eq)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
+open import Data.Bool using (not)
 open import Agda.Builtin.Nat using (Nat ; suc ; _<_ ; _==_)
 open import Agda.Builtin.List using (List; _∷_ ; [])
 open import Data.List.Base using (length ; _++_ ; concat ; map ; head ; tail)
@@ -96,7 +97,7 @@ all-keys (node lhs v rhs) = (all-keys lhs) ++ ((LTPair.key v) ∷ []) ++ (all-ke
 quick-sort-h : {A : Set} → Nat → (A → A → Bool) → List A → List A
 quick-sort-h 0 _ _ = []
 quick-sort-h _ _ [] = []
-quick-sort-h (suc l) lt (x ∷ xs) = concat ((quick-sort-h l lt (filterᵇ (λ {q → lt q x}) xs)) ∷ (x ∷ []) ∷ (quick-sort-h l lt (filterᵇ (λ {q → lt x q}) xs)) ∷ [])
+quick-sort-h (suc l) lt (x ∷ xs) = concat ((quick-sort-h l lt (filterᵇ (λ {q → not (lt x q)}) xs)) ∷ (x ∷ []) ∷ (quick-sort-h l lt (filterᵇ (λ {q → lt x q}) xs)) ∷ [])
 
 quick-sort : {A : Set} → (A → A → Bool) → List A → List A
 quick-sort lt inp = quick-sort-h (length inp) lt inp

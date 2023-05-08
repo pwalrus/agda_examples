@@ -7,11 +7,12 @@ open import Agda.Builtin.String
 open import d1.captcha using (run-captcha-half)
 open import d2.checksum using (calc-checksum ; calc-div-pair)
 open import d3.spiral using (dist-to-center ; accumulate-to-goal)
+open import d4.passphrase using (count-valid-phrases)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact accumulate-to-goal
+main = interact count-valid-phrases
 
