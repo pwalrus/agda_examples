@@ -185,6 +185,15 @@ index-of-h idx eq (x ∷ xs) k = if (eq x k) then (just idx) else index-of-h (su
 index-of : {A : Set} → (A → A → Bool) → List A → A → Maybe ℕ
 index-of eq xs k = index-of-h 0 eq xs k
 
+set-at-h : {A : Set} → List A → List A → ℕ → A → List A
+set-at-h xs [] _ _ = reverse xs
+set-at-h h (x ∷ xs) 0 val = concat ((reverse h) ∷ (val ∷ xs) ∷ [])
+set-at-h h (x ∷ xs) (suc idx) val = set-at-h (x ∷ h) xs idx val
+
+set-at : {A : Set} → List A → ℕ → A → List A
+set-at xs n val = set-at-h [] xs n val
+
+
 parse-nat : String → ℕ
 parse-nat x = def-zero (readMaybe 10 x)
   where
@@ -353,3 +362,6 @@ test-rem-match = refl
 
 test-conseq : conseq (1 ∷ 2 ∷ 3 ∷ []) ≡ (1 , 2) ∷ (2 , 3) ∷ []
 test-conseq = refl
+
+test-set-at : set-at (1 ∷ 2 ∷ 3 ∷ []) 1 5 ≡ (1 ∷ 5 ∷ 3 ∷ [])
+test-set-at = refl
