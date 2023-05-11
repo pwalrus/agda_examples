@@ -12,11 +12,12 @@ open import d5.bounce using (jump-through)
 open import d6.cycle using (find-inf-loop)
 open import d7.tower using (find-root-node ; find-unbalanced-node)
 open import d8.register using (run-cond-program)
+open import d9.garbage using (score-all-streams ; count-garbage)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact run-cond-program
+main = interact count-garbage
 
