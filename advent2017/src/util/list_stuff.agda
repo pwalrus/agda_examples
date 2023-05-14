@@ -1,17 +1,19 @@
 
 module util.list_stuff where
 
+
+open import util.nat_stuff using (div-nat ; mod-nat)
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (fromList ; toList ; _++_ ; unlines ; intersperse)
 open import Data.String.Properties using () renaming (_==_ to _==s_)
 open import Data.Bool.Base using (Bool; true; false; if_then_else_ ; not)
 open import Data.Char.Base as Char using (Char)
 open import Data.Char.Properties using (_==_)
-open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip ; head ; tail ; applyUpTo)
+open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip ; head ; tail ; applyUpTo ; take ; drop ; replicate ; _∷ʳ_)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
-open import Agda.Builtin.Nat using (_<_)
-open import Data.Nat.Base using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc)
+open import Agda.Builtin.Nat using (_<_ ; _+_ ; _-_)
+open import Data.Nat using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc ; pred)
 open import Data.Nat.Show using (readMaybe ; show)
 open import Function.Base using (_on_; _∘′_; _∘_)
 open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂ ; map₁ ; map₂)
@@ -161,6 +163,38 @@ conseq : {A : Set} → List A → List (A × A)
 conseq [] = []
 conseq (_ ∷ []) = []
 conseq (a ∷ b ∷ xs) = (a , b) ∷ (conseq (b ∷ xs))
+
+
+
+get-sub-wrap : {A : Set} → ℕ → ℕ → List A → List A
+get-sub-wrap _ _ [] = []
+get-sub-wrap {A} srt len xs = output
+  where
+    full-copies : ℕ
+    full-copies = div-nat (pred len) (length xs)
+    tail-wrap : ℕ
+    tail-wrap = mod-nat (len + srt) (length xs)
+    output : List A
+    output with (srt + len < length xs)
+    output | true = take len (drop srt xs)
+    output | false = concat ((drop srt xs) ∷ (replicate full-copies xs) ∷ʳ (take tail-wrap xs))
+
+set-sub-wrap : {A : Set} → ℕ → List A → List A → List A
+set-sub-wrap _ [] xs = xs
+set-sub-wrap _ _ [] = []
+set-sub-wrap {A} srt newval xs = output
+  where
+    len : ℕ
+    len = length newval
+    tail-wrap : ℕ
+    tail-wrap = (length xs - srt)
+    inner-untouched : List A
+    inner-untouched = drop (length newval - tail-wrap) (take srt xs)
+    output : List A
+    output with (srt + len < length xs)
+    output | true = concat ((take srt xs) ∷ newval ∷ (drop (srt + len) xs) ∷ [])
+    output | false = concat ((drop tail-wrap newval) ∷ [ inner-untouched ] ∷ʳ (take (length xs - srt) newval))
+
 
 
 -- Almost completed copied from std-lib. Its in the online version, but not the installed version?
@@ -365,3 +399,26 @@ test-conseq = refl
 
 test-set-at : set-at (1 ∷ 2 ∷ 3 ∷ []) 1 5 ≡ (1 ∷ 5 ∷ 3 ∷ [])
 test-set-at = refl
+
+
+test-get-sub-wrap-a : (fromList ∘ get-sub-wrap 1 3 ∘ toList) "abcdef" ≡ "bcd"
+test-get-sub-wrap-a = refl
+
+test-get-sub-wrap-b : (fromList ∘ get-sub-wrap 5 3 ∘ toList) "abcdef" ≡ "fab"
+test-get-sub-wrap-b = refl
+
+test-get-sub-wrap-c : (fromList ∘ get-sub-wrap 5 9 ∘ toList) "abcdef" ≡ "fabcdefab"
+test-get-sub-wrap-c = refl
+
+test-set-sub-wrap-a : (fromList ∘ set-sub-wrap 1 (toList "qrst") ∘ toList) "abcdef" ≡ "aqrstf"
+test-set-sub-wrap-a = refl
+
+test-set-sub-wrap-b : (fromList ∘ set-sub-wrap 5 (toList "qr") ∘ toList) "abcdef" ≡ "rbcdeq"
+test-set-sub-wrap-b = refl
+
+test-set-sub-wrap-c : (fromList ∘ set-sub-wrap 5 (toList "qrs") ∘ toList) "abcdef" ≡ "rscdeq"
+test-set-sub-wrap-c = refl
+
+test-set-sub-wrap-d : (fromList ∘ set-sub-wrap 5 (toList "qrst") ∘ toList) "abcdef" ≡ "rstdeq"
+test-set-sub-wrap-d = refl
+
