@@ -14,11 +14,12 @@ open import d7.tower using (find-root-node ; find-unbalanced-node)
 open import d8.register using (run-cond-program)
 open import d9.garbage using (score-all-streams ; count-garbage)
 open import d10.knot using (run-the-knot)
+open import d11.hex using (point-from-path)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact run-the-knot
+main = interact point-from-path
 
