@@ -32,11 +32,14 @@ find-parts delim (x ∷ xs) = if x == delim then [] ∷ (find-parts delim xs) el
 split : Char → String → List String
 split delim  = (map fromList) ∘ (find-parts delim) ∘ toList
 
-unique-insert-str : List String → String → List String
-unique-insert-str [] l = l ∷ []
-unique-insert-str (x ∷ xs) l = if (x ==s l)
+unique-insert : {A : Set} → (A → A → Bool) →  List A → A → List A
+unique-insert _ [] l = l ∷ []
+unique-insert eq (x ∷ xs) l = if (eq x l)
    then x ∷ xs
-   else x ∷ (unique-insert-str xs l)
+   else x ∷ (unique-insert eq xs l)
+
+unique-insert-str : List String → String → List String
+unique-insert-str xs l = unique-insert _==s_ xs l
 
 nat-range : ℕ → List ℕ
 nat-range 0 = []

@@ -2,7 +2,7 @@ module util.lookup where
 
 open import util.list_stuff using (filterᵇ)
 open import Data.Tree.Binary using (Tree ; leaf ; node)
-open import Data.Product using (_×_; _,_)
+open import Data.Product using (_×_; _,_ ; proj₁)
 open import Agda.Builtin.String using (String)
 open import Data.String.Base using (intersperse)
 open import Data.String.Properties using (_<?_) renaming (_==_ to str-eq)
@@ -14,6 +14,7 @@ open import Data.List.Base using (length ; _++_ ; concat ; map ; head ; tail)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_ ; refl)
 open import Relation.Nullary.Decidable using (isYes)
+open import Function using (_∘_)
 
 record LTPair (A B : Set) : Set where
   field
@@ -129,6 +130,9 @@ counter {A} eq lt lst = quick-sort (pair-orders lt) counts
 counter-nat : List Nat → List (Nat × Nat)
 counter-nat = counter _==_ _<_
 
+unique-list : {A : Set} → (A → A → Bool) → (A → A → Bool) → List A → List A
+unique-list eq lt = quick-sort lt ∘ map proj₁ ∘ counter eq lt
+
 test_read-vala : read-val 3 (build-tree _==_ _<_ ((4 , 7) ∷ (5 , 2) ∷ (3 , 4) ∷ [])) ≡ (just 4)
 test_read-vala = refl
 
@@ -152,3 +156,6 @@ test-quick-sort = refl
 
 test-counter : counter-nat (1 ∷ 2 ∷ 2 ∷ 3 ∷ []) ≡ (2 , 2) ∷ (1 , 1) ∷ (3 , 1) ∷ []
 test-counter = refl
+
+test-unique-list : unique-list _==_ _<_ (1 ∷ 2 ∷ 2 ∷ 3 ∷ []) ≡ (1 ∷ 2 ∷ 3 ∷ [])
+test-unique-list = refl
