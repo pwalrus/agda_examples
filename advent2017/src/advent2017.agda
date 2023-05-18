@@ -16,11 +16,12 @@ open import d9.garbage using (score-all-streams ; count-garbage)
 open import d10.knot using (run-the-knot)
 open import d11.hex using (point-from-path)
 open import d12.plumber using (not-connected-to-root)
+open import d13.scan using (final-scanner-state)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact not-connected-to-root
+main = interact final-scanner-state
 
