@@ -7,13 +7,13 @@ open import Agda.Builtin.List using (List ; _∷_ ; [])
 open import Data.List using (concat ; foldr ; cartesianProductWith ; map ; length ; applyUpTo)
 open import Agda.Builtin.Bool using (Bool ; false ; true)
 open import Data.Bool using (if_then_else_ ; not ; _∧_)
-open import Agda.Builtin.Nat using (Nat ; suc ; _+_ ; _-_ ; _<_ ; _==_)
+open import Agda.Builtin.Nat using (Nat ; suc ; _+_ ; _-_ ; _*_ ; _<_ ; _==_)
 open import Agda.Builtin.Maybe using (Maybe ; just ; nothing)
 open import Agda.Builtin.Equality using (refl ; _≡_)
 open import Agda.Builtin.String using (String)
 open import Data.String using (intersperse)
 open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
-open import Function using (_∘_ ; id)
+open import Function using (_∘_ ; id ; const)
 
 search-rec-depth : {A : Set} → Nat → (A → Bool) → (A → List A) → List A → Maybe (A)
 search-rec-depth 0 _ _ _ = nothing
@@ -87,6 +87,28 @@ branch-bound {A} (suc lm) best done-cond qual-func mk-child (x ∷ stack) = bran
     new-stack : List A
     new-stack = concat ((filterᵇ (is-valid new-b-pair done-cond qual-func) next-layer) ∷ stack ∷ [])
 
+first-component : {A : Set} → (A → String) → (A → List A) → List A → (List A × List A)
+first-component dedup mk-child [] = [] , []
+first-component {A} dedup mk-child (x ∷ xs) = (x ∷ included) , excluded
+  where
+    found : Maybe A × LookupStrTree Bool
+    found = search-rec-breadth-dedup ((_*_ 10 ∘ suc ∘ length) xs) dedup (const false) mk-child (x ∷ [])
+    included : List A
+    included = filterᵇ (λ {q → (has-val (dedup q) ∘ proj₂) found }) xs
+    excluded : List A
+    excluded = filterᵇ (λ {q → (not ∘ has-val (dedup q) ∘ proj₂) found }) xs
+
+private
+  components-h : {A : Set} → Nat → (A → String) → (A → List A) → List A → List (List A) → List (List A)
+  components-h 0 _ _ _ _ = []
+  components-h _ _ _ [] xs = xs
+  components-h {A} (suc lm) dedup mk-child nodes xs = components-h lm dedup mk-child (proj₂ splt) (proj₁ splt ∷ xs)
+    where
+      splt : List A × List A
+      splt = first-component dedup mk-child nodes
+
+components : {A : Set} → (A → String) → (A → List A) → List A → List (List A)
+components dedup mk-child xs = components-h (2 * (length xs)) dedup mk-child xs []
 
 private
   add-coin : List Nat → List (List Nat)
@@ -129,7 +151,6 @@ private
 test-find-shortest : search-rec-breadth 10 graph-end next-steps ([] ∷ []) ≡ just ("E" ∷ "C" ∷ "A" ∷ [])
 test-find-shortest = refl
 
-
 test-find-shortest-dedup-l : proj₁ (search-rec-breadth-dedup 10 show-loc graph-end next-steps ([] ∷ [])) ≡ just ("E" ∷ "C" ∷ "A" ∷ [])
 test-find-shortest-dedup-l = refl
 
@@ -138,6 +159,12 @@ test-find-shortest-dedup-r = refl
 
 test-find-all : search-rec-all 100 graph-end next-steps ([] ∷ []) ≡ ("E" ∷ "C" ∷ "A" ∷ []) ∷ ("E" ∷ "D" ∷ "B" ∷ "A" ∷ []) ∷ []
 test-find-all = refl
+
+test-first-component : (first-component id sample-graph ("A" ∷ "B" ∷ "C" ∷ "D" ∷ "E" ∷ "F" ∷ [])) ≡ (("A" ∷ "B" ∷ "C" ∷ "D" ∷ "E" ∷ []) , ("F" ∷ []))
+test-first-component = refl
+
+test-components : components id sample-graph ("A" ∷ "B" ∷ "C" ∷ "D" ∷ "E" ∷ "F" ∷ []) ≡ ("F" ∷ []) ∷ ("A" ∷ "B" ∷ "C" ∷ "D" ∷ "E" ∷ []) ∷ []
+test-components = refl
 
 
 private

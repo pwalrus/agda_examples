@@ -4,7 +4,7 @@ open import util.list_stuff using (words ; lines ; unmaybe ; hard-unmaybe ; filt
 open import util.lookup using (LookupStrTree ; build-str-tree ; LTPair ; counter ; quick-sort ; str-lt ; all-values ; all-keys ; unique-list)
 open import util.lookup_nat using (LookupNatTree ; build-nat-tree ; has-val ; all-kv) renaming (set-val to set-tree ; read-val to read-tree)
 open import util.json using (readIntMaybe)
-open import util.search using (search-rec-breadth-dedup ; branch-bound)
+open import util.search using (search-rec-breadth-dedup ; branch-bound ; components)
 open import util.nat_stuff using (div-nat ; mod-nat ; max)
 open import util.bitwise using (bitwise-xor)
 open import Data.Tree.Binary using (leaf ; node)
@@ -72,22 +72,11 @@ connected-from-node-h (suc lm) found new-group nodes = output
 connected-from-node : Nat → List Prog → List Nat
 connected-from-node start nodes = (quick-sort _<_ ∘ connected-from-node-h (suc (length nodes)) (build-nat-tree []) (start ∷ [])) ( build-nat-tree (map (λ {q → Prog.name q , q}) nodes))
 
-connected-groups-h : Nat → List Prog → List (List Nat) → List (List Nat)
-connected-groups-h 0 _ _ = []
-connected-groups-h _ [] xs = xs
-connected-groups-h (suc lm) nodes xs = connected-groups-h lm remaining (first-group ∷ xs)
-  where
-    start : Nat
-    start = (Prog.name ∘ fromMaybe (prg 0 []) ∘ head) nodes
-    first-group : List Nat
-    first-group = connected-from-node start nodes
-    found : LookupNatTree Bool
-    found = build-nat-tree (map (λ {q → q , true}) first-group)
-    remaining : List Prog
-    remaining = filterᵇ (λ {q → not(has-val (Prog.name q) found)}) nodes
-
 connected-groups : List Prog → List (List Nat)
-connected-groups nodes = connected-groups-h (suc(length nodes)) nodes []
+connected-groups nodes = (map (map Prog.name) ∘ components {Prog} (show ∘ Prog.name) (unmaybe ∘ map (λ {q → read-tree q db}) ∘ Prog.linked)) nodes
+  where
+    db : LookupNatTree Prog
+    db = build-nat-tree (map (λ {q → Prog.name q , q}) nodes)
 
 show-connected : List Nat → String
 show-connected xs = "{" ++ (intersperse ", " ∘ map show) xs ++ "}, size: " ++ show (length xs)
@@ -125,6 +114,6 @@ test-prog = (unmaybe ∘ map parse-row ∘ lines) test-fixture
 test-connected : show-connected (connected-from-node 0 test-prog) ≡ "{0, 2, 3, 4, 5, 6}, size: 6"
 test-connected = refl
 
-test-connected-groups : show-groups (connected-groups test-prog) ≡ "1|6\ntotal: 2"
+test-connected-groups : (show-groups ∘ connected-groups) test-prog ≡ "1|6\ntotal: 2"
 test-connected-groups = refl
 
