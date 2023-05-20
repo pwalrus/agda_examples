@@ -4,9 +4,10 @@ open import util.list_stuff using (words ; lines ; unmaybe ; hard-unmaybe ; filt
 open import util.lookup using (LookupStrTree ; build-str-tree ; LTPair ; counter ; quick-sort ; str-lt ; all-values ; all-keys ; unique-list)
 open import util.lookup_nat using (LookupNatTree ; build-nat-tree ; has-val ; all-kv) renaming (set-val to set-tree ; read-val to read-tree)
 open import util.json using (readIntMaybe)
-open import util.search using (search-rec-breadth-dedup ; branch-bound)
+open import util.search using (search-rec-breadth-dedup ; branch-bound ; components)
 open import util.nat_stuff using (div-nat ; mod-nat ; max)
 open import util.bitwise using (bitwise-xor ; to-bin ; show-bool)
+open import util.grid using (Point ; point ; show-point ; neighbors-2d)
 open import Data.Tree.Binary using (leaf ; node)
 open import Agda.Builtin.String using (String)
 open import Data.String using (toList ; fromList ; _++_ ; unlines ; intersperse ; fromChar ; padLeft)
@@ -64,9 +65,43 @@ make-grid xs = (map to-bits-array ∘ map hash-to-hex ∘ applyUpTo (λ {q → (
 count-used-in-grid : String → String
 count-used-in-grid xs = "used: " ++  (show ∘ foldr _+_ 0 ∘ map (λ {true → 1 ; _ → 0}) ∘ concat ∘ make-grid ∘ trim) xs ++ "\n"
 
+mangle-offs : Nat
+mangle-offs = 100000
+
+mangle-id : Point → Nat
+mangle-id (point x y) = 10 * mangle-offs * ∣ pos mangle-offs +z x ∣ + ∣ pos mangle-offs +z y ∣
+
+grid-to-points : List (List Bool) → List Point
+grid-to-points xs = map (uncurry point) flattened
+  where
+    nested : List (Nat × List (Nat × Bool))
+    nested = (map (map₂ (filterᵇ proj₂)) ∘ enumerate ∘ map enumerate) xs
+    flattened : List (Int × Int)
+    flattened = concat (map (λ {(a , lst) → map (λ {(b , _) → pos a , pos b}) lst}) nested)
+
+find-connected : List Point → List (List Point)
+find-connected xs = components show-point neighbors-2d-flt xs
+  where
+    db : LookupNatTree Bool
+    db = build-nat-tree (map (λ {q → mangle-id q , true}) xs)
+    neighbors-2d-flt : Point → List Point
+    neighbors-2d-flt = filterᵇ (λ {q → has-val (mangle-id q) db}) ∘ neighbors-2d
+
+find-frag-components : String → String
+find-frag-components x = (unlines ∘ map (intersperse ",") ∘ map (map show-point)) comps ++ "\ntotal: " ++ show (length comps) ++ "\n"
+  where
+    grid : List (List Bool)
+    grid = (make-grid ∘ trim) x
+    comps : List (List Point)
+    comps = (find-connected ∘ grid-to-points) grid
+
 test-bits-array : (intersperse "" ∘ map show-bool ∘ to-bits-array ∘ unmaybe ∘ map (readMaybe 16))  ("a0" ∷ "c2" ∷ "01" ∷ []) ≡ "101000001100001000000001"
 test-bits-array = refl
 
 -- its slow
 --test-count-used-in-grid : count-used-in-grid "flqrgnkx" ≡ "used: 8108\n"
 --test-count-used-in-grid = refl
+
+test-grid-to-points : (unlines ∘ map show-point ∘ grid-to-points) ((true ∷ false ∷ []) ∷ (false ∷ true ∷ []) ∷ []) ≡ "(0, 0)\n(1, 1)"
+test-grid-to-points = refl
+
