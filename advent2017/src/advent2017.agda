@@ -19,11 +19,12 @@ open import d12.plumber using (not-connected-to-root)
 open import d13.scan using (final-scanner-state)
 open import d14.defrag using (count-used-in-grid ; find-frag-components)
 open import d15.duel using (count-gen-matches)
+open import d16.dance using (after-dance)
 
 postulate interact : (String → String) → IO ⊤
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# COMPILE GHC interact = \ f -> interact ( T.unpack . f . T.pack ) #-}
 
 main : IO ⊤
-main = interact count-gen-matches
+main = interact after-dance
 

@@ -12,7 +12,7 @@ open import Data.Char.Properties using (_==_)
 open import Data.List.Base as List using (List; [_]; _∷_; [] ; reverse ; map ; concat ; foldr ; length ; zip ; head ; tail ; applyUpTo ; take ; drop ; replicate ; _∷ʳ_)
 open import Data.List.NonEmpty.Base as NE using (List⁺)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
-open import Agda.Builtin.Nat using (_<_ ; _+_ ; _-_)
+open import Agda.Builtin.Nat using (_<_ ; _+_ ; _-_) renaming (_==_ to _==n_)
 open import Data.Nat using (ℕ; _∸_; ⌊_/2⌋; ⌈_/2⌉ ; suc ; pred)
 open import Data.Nat.Show using (readMaybe ; show)
 open import Function.Base using (_on_; _∘′_; _∘_)
@@ -199,6 +199,77 @@ set-sub-wrap {A} srt newval xs = output
     output | false = concat ((drop tail-wrap newval) ∷ [ inner-untouched ] ∷ʳ (take (length xs - srt) newval))
 
 
+atIdx : {A : Set} → ℕ → List A → Maybe A
+atIdx _ [] = nothing
+atIdx 0 (x ∷ _) = just x
+atIdx (suc lm) (x ∷ xs) = atIdx lm xs
+
+setIdx : {A : Set} → ℕ → A → List A → List A
+setIdx _ c [] = c ∷ []
+setIdx 0 c (_ ∷ xs) = c ∷ xs
+setIdx (suc lm) c (x ∷ xs) = x ∷ (setIdx lm c xs)
+
+idxOf : {A : Set} → (A → A → Bool) → ℕ → A → List A → Maybe ℕ
+idxOf eq _ _ [] = nothing
+idxOf eq idx c (x ∷ xs) = if (eq x c) then just idx else idxOf eq (suc idx) c xs
+
+popIdx : {A : Set} → ℕ → List A → List A
+popIdx _ [] = []
+popIdx 0 (x ∷ xs) = xs
+popIdx (suc idx) (x ∷ xs) = x ∷ (popIdx idx xs)
+
+insIdx : {A : Set} → ℕ → A → List A → List A
+insIdx _ c [] = c ∷ []
+insIdx 0 c xs = c ∷ xs
+insIdx (suc idx) c (x ∷ xs) = x ∷ (insIdx idx c xs)
+
+unmaybe : {A : Set} → List (Maybe A) → List A
+unmaybe [] = []
+unmaybe ((just x) ∷ xs) = x ∷ (unmaybe xs)
+unmaybe (nothing ∷ xs) = unmaybe xs
+
+hard-unmaybe : {A : Set} → List (Maybe A) → Maybe (List A)
+hard-unmaybe [] = just []
+hard-unmaybe ((just x) ∷ xs) with (hard-unmaybe xs)
+hard-unmaybe ((just x) ∷ xs) | (just ys) = just (x ∷ ys)
+hard-unmaybe ((just x) ∷ xs) | nothing = nothing
+hard-unmaybe (nothing ∷ xs) = nothing
+
+apply-perm-to-perm : {A : Set} → List ℕ → List A → List A
+apply-perm-to-perm perm base = (unmaybe ∘ map (λ {q → atIdx q base})) perm
+
+private
+  exp-perm-h : {A : Set} → ℕ → ℕ → (A → A → A) → A → List A → List A
+  exp-perm-h 0 _ _ _ _ = []
+  exp-perm-h _ 0 _ _ _ = []
+  exp-perm-h {A} (suc lm) n func inp accum = new-inp
+    where
+      rem : ℕ
+      rem = mod-nat n 2
+      div : ℕ
+      div = div-nat n 2
+      new-base : A
+      new-base = func inp inp
+      new-accum : List A
+      new-accum with (rem)
+      new-accum | 0 = accum
+      new-accum | _ = inp ∷ accum
+      new-inp : List A
+      new-inp with (div ==n 0)
+      new-inp | true = new-accum
+      new-inp | false = exp-perm-h lm div func new-base new-accum
+
+exp-perm : {A : Set} → ℕ → (A → A → A) → A → A
+exp-perm {A} n func base = output
+  where
+    parts : List A
+    parts = exp-perm-h n n func base []
+    output : A
+    output with (head parts)
+    output | (just x) with (tail parts)
+    output | (just x) | (just t) = foldr func x t
+    output | (just x) | _ = base
+    output | _ = base
 
 -- Almost completed copied from std-lib. Its in the online version, but not the installed version?
 
@@ -275,18 +346,6 @@ linesByᵇ p = List.map fromList ∘ ListlinesByᵇ p ∘ toList
 
 lines : String → List String
 lines = linesByᵇ ('\n' Char.≈ᵇ_)
-
-unmaybe : {A : Set} → List (Maybe A) → List A
-unmaybe [] = []
-unmaybe ((just x) ∷ xs) = x ∷ (unmaybe xs)
-unmaybe (nothing ∷ xs) = unmaybe xs
-
-hard-unmaybe : {A : Set} → List (Maybe A) → Maybe (List A)
-hard-unmaybe [] = just []
-hard-unmaybe ((just x) ∷ xs) with (hard-unmaybe xs)
-hard-unmaybe ((just x) ∷ xs) | (just ys) = just (x ∷ ys)
-hard-unmaybe ((just x) ∷ xs) | nothing = nothing
-hard-unmaybe (nothing ∷ xs) = nothing
 
 cartproduct : {A B : Set} → List A → List B → List (A × B)
 cartproduct [] _ = []
@@ -425,3 +484,11 @@ test-set-sub-wrap-c = refl
 test-set-sub-wrap-d : (fromList ∘ set-sub-wrap 5 (toList "qrst") ∘ toList) "abcdef" ≡ "rstdeq"
 test-set-sub-wrap-d = refl
 
+test-apply-perm : (fromList ∘ apply-perm-to-perm (1 ∷ 2 ∷ 0 ∷ []) ∘ toList) "abc" ≡ "bca"
+test-apply-perm = refl
+
+test-exp-perm-a : exp-perm 7 _+_ 3 ≡ 21
+test-exp-perm-a = refl
+
+test-exp-perm-b : exp-perm 4 _+_ 3 ≡ 12
+test-exp-perm-b = refl
