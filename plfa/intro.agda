@@ -1,8 +1,12 @@
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
-open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _∸_;_^_)
+open import Agda.Builtin.Nat using (mod-helper)
 
+open import Data.Nat using (ℕ; zero; suc; pred;_+_; _*_; _∸_;_^_ ; ⌊_/2⌋)
+open import Data.Bool using (Bool ; true ; false)
+open import Data.Product using (_×_ ; _,_)
+open import Function using (_∘_)
 
 +-id' : ∀ (n : ℕ) → n + 0 ≡ n
 +-id' 0 =
@@ -184,3 +188,80 @@ siml-mult-comm n m =
   ≡⟨ cong (_^_ m) (sym (siml-mult-comm n p)) ⟩
     m ^ (n * suc p)
   ∎
+
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+
+inc-bin-h : Bin → (Bool × Bin)
+inc-bin-h ⟨⟩ = true , ⟨⟩
+inc-bin-h (x O) with (inc-bin-h x)
+inc-bin-h (x O) | false , y = false , y O
+inc-bin-h (x O) | true , y = false , y I
+inc-bin-h (x I) with (inc-bin-h x)
+inc-bin-h (x I) | false , y = false , y I
+inc-bin-h (x I) | true , y = true , y O
+
+inc-bin : Bin → Bin
+inc-bin x with (inc-bin-h x)
+inc-bin x | (false , y) = y
+inc-bin x | (true , y) = y I
+
+mod-nat : ℕ → ℕ → ℕ
+mod-nat x y = mod-helper 0 (pred y) x (pred y)
+
+to-bin-h : ℕ → Bin → ℕ → Bin
+to-bin-h _ a 0 = a
+to-bin-h 0 _ _ = ⟨⟩
+to-bin-h (suc lm) a x with (mod-nat x 2)
+... | 0 = to-bin-h lm (a O) ⌊ x /2⌋
+... | _ = to-bin-h lm (a I) ⌊ x /2⌋
+
+to-bin : ℕ → Bin
+to-bin x = to-bin-h x ⟨⟩ x
+
+from-bin-h : Bin → ℕ → ℕ
+from-bin-h ⟨⟩ a = a
+from-bin-h (x O) a = from-bin-h x (2 * a)
+from-bin-h (x I) a = from-bin-h x (2 * a + 1)
+
+from-bin : Bin → ℕ
+from-bin x = from-bin-h x 0
+
+_ : from-bin (⟨⟩) ≡ 0
+_ = refl
+
+_ : from-bin (inc-bin ⟨⟩) ≡ 1
+_ = refl
+
+_ : from-bin ((inc-bin ∘ inc-bin) ⟨⟩) ≡ 2
+_ = refl
+
+_ : from-bin ((inc-bin ∘ inc-bin ∘ inc-bin) ⟨⟩) ≡ 3
+_ = refl
+
+_ : from-bin (to-bin 0) ≡ 0
+_ = refl
+
+_ : from-bin (to-bin 1) ≡ 1
+_ = refl
+
+_ : from-bin (to-bin 2) ≡ 2
+_ = refl
+
+_ : from-bin (to-bin 3) ≡ 3
+_ = refl
+
+bin-thm1 : ∀ (b : Bin) → from-bin (inc-bin b) ≡ suc (from-bin b)
+bin-thm1 ⟨⟩ = refl
+bin-thm1 (b O) = {!!}
+bin-thm1 (b I) = {!!}
+
+--bin-thm2 : ∀ (b : Bin) → to-bin (from-bin b) ≡ b
+--bin-thm2 b = {!!}
+--not true, expressions with leading zeros break uniqueness, ex: ⟨⟩ O O
+
+bin-thm3 : ∀ (n : ℕ) → from-bin (to-bin n) ≡ n
+bin-thm3 n = {!!}
