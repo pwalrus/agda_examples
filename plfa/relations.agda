@@ -214,7 +214,7 @@ to-can : ∀ (n : ℕ) → Can (to-bin n)
 to-can zero = ⟨⟩c
 to-can (suc m) = inc-can (to-can m)
 
-to-from-can : ∀ (b : Bin) → Can b → to-bin (from-bin b) ≡ b
-to-from-can ⟨⟩ p = refl
-to-from-can (b O) p = {!!}
-to-from-can (b I) p = {!!}
+--to-from-can : ∀ (b : Bin) → Can b → to-bin (from-bin b) ≡ b
+--to-from-can ⟨⟩ p = refl
+--to-from-can (b O) p = {!!}
+--to-from-can (b I) p = {!!}
