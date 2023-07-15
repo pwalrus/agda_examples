@@ -121,3 +121,4 @@ data ⊥ : Set where
 ⊎×-implies-×⊎ : ∀ {A B C D : Set} → (A × B) ⊎ (C × D) → (A ⊎ C) × (B ⊎ D)
 ⊎×-implies-×⊎ (inj₁ (fst , snd)) = inj₁ fst , inj₁ snd
 ⊎×-implies-×⊎ (inj₂ (fst , snd)) = inj₂ fst , inj₂ snd
+
