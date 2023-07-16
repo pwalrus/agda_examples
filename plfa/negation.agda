@@ -116,3 +116,4 @@ stb-thm1 {A} {B} sta stb AB = sta (λ z → z (sta (λ z₁ → AB (λ z₂ → 
 
 stb-thm2 : ∀ {A : Set} → Stable (¬ A)
 stb-thm2 {A} = λ x x₁ → x (λ z → z x₁)
+

@@ -10,6 +10,9 @@ open import Function using (_∘_)
 postulate
   extensionality : ∀ {A B : Set} {f g : A → B} → (∀ (x : A) → f x ≡ g x) → f ≡ g
 
+postulate
+  ∀-extensionality : ∀ {A : Set} {B : A → Set} {f g : ∀(x : A) → B x}
+    → (∀ (x : A) → f x ≡ g x) → f ≡ g
 
 infix 0 _≃_
 record _≃_ (A B : Set) : Set where
